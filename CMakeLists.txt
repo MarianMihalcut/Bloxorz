@@ -11,11 +11,12 @@ include_directories(glew_freeglut/freeglut/freeglut-3.8.0/include)
 
 add_executable(${PROJECT_NAME} src/main.cpp
         src/Interfaces/ObjectModelInterface.h
-        src/Objects/Cuboid.h
+        src/Objects/Cuboid/Cuboid.h
         src/Interfaces/Tile.h
         src/Objects/ConcreteTile.h
         src/Objects/BridgeTile.h
         src/Objects/ButtonTile.h
+        src/Objects/Cuboid/Cuboid.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
