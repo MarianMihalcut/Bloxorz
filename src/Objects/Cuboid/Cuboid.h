@@ -41,7 +41,6 @@ namespace ObjectModel {
 
         void init() override;
         void display() override;
-        void show_object() override;
 
         void setProjectionMatrix(glm::mat4 proj);
         void setViewMatrix(glm::mat4 view);

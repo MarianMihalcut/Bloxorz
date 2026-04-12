@@ -150,14 +150,10 @@ namespace ObjectModel {
     }
 
     void Cuboid::init() {
-        const GLubyte* renderer = glGetString(GL_RENDERER); // get renderer string
-        const GLubyte* version = glGetString(GL_VERSION); // version as a string
-        printf("Renderer: %p\n", renderer);
-        printf("OpenGL version supported %p\n", version);
 
         //incarcare shadere
-        std::string vstext = textFileRead("vertex.vert");
-        std::string fstext = textFileRead("fragment.frag");
+        std::string vstext = textFileRead("../src/Objects/Cuboid/vertex.vert");
+        std::string fstext = textFileRead("../src/Objects/Cuboid/fragment.frag");
         const char* vertex_shader = vstext.c_str();
         const char* fragment_shader = fstext.c_str();
 
