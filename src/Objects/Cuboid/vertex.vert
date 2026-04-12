@@ -6,7 +6,7 @@ layout(location = 2) in vec3 color;
 
 uniform mat4 mvpMatrix;
 uniform mat4 modelMatrix;
-uniform mat4 normalMatrix;
+uniform mat3 normalMatrix;
 uniform vec3 lightPos;
 uniform vec3 viewPos;
 
@@ -20,7 +20,7 @@ void main(){
     vec4 worldPos = modelMatrix * vec4(position, 1.0);
     fragPos = worldPos.xyz; //toate coordonatele tridimensionale
 
-    fragNormal = normalize((normalMatrix) * vec4(normal,0.0).xyz);
+    fragNormal = normalize(normalMatrix * normal);
     fragColor = color;
 
     lightDir = normalize(lightPos - fragPos);

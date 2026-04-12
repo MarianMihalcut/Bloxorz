@@ -14,11 +14,11 @@
 
 namespace ObjectModel {
     /// Constructor implicit.
-    /// Implicit are marimea de 1 x 0.5 x 2.
+    /// Implicit are marimea de 1 x 0.5 x 1.
     /// Implicit e de culoare albastra.
     Cuboid::Cuboid(){
         position = glm::vec3(0.0f, 0.5f, 0.0f);
-        scale = glm::vec3(1.0f, 0.5f, 2.0f);
+        scale = glm::vec3(1.0f, 0.5f, 1.0f);
         color = glm::vec3(0.2f, 0.6f, 1.0f);
         rotation = 0.0f;
 
@@ -32,6 +32,8 @@ namespace ObjectModel {
         projectionMatrix = glm::perspective(PI / 6.0f,1.0f,0.1f,100.0f);
         viewMatrix = glm::lookAt(viewPos, glm::vec3(0.0f, 0.0f, 0.0f),
             glm::vec3(0.0f, 1.0f, 0.0f));
+
+        isStanding = 1;
 
         generateVertices();
     }
@@ -47,11 +49,13 @@ namespace ObjectModel {
         nrVertices = nrFaces * nrVerticesPerFace;
 
         lightPos = glm::vec3(5.0f, 10.0f, 5.0f);
-        viewPos = glm::vec3(5.0f, 5.0f, 10.0f);
+        viewPos = glm::vec3(10.0f, 5.0f, 5.0f);
 
         projectionMatrix = glm::perspective(PI / 6.0f, 1.0f, 0.1f, 100.0f);
         viewMatrix = glm::lookAt(viewPos, glm::vec3(0.0f, 0.0f, 0.0f),
             glm::vec3(0.0f, 1.0f, 0.0f));
+
+        isStanding = 1;
 
         generateVertices();
     }
@@ -299,5 +303,133 @@ namespace ObjectModel {
 
     void Cuboid::rotateY(float angle) {
         rotation += angle;
+    }
+
+    bool Cuboid::getIsStanding() {
+        updateOrientation();
+        return isStanding;
+    }
+
+    void Cuboid::moveUp() {
+        updateOrientation();
+        if (isStanding) {
+            // În picioare → se culcă pe Z
+            std::swap(scale.y, scale.z);
+            generateVertices();
+            if (vbo != 0) {
+                glBindBuffer(GL_ARRAY_BUFFER, vbo);
+                glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(float),
+                    vertices.data(), GL_STATIC_DRAW);
+            }
+            position.z -= scale.z / 2.0f + scale.x / 2.0f;
+
+            isStanding = 0;
+        } else if (scale.z > scale.x) {
+            // Culcat pe Z → alunecă
+            position.z -= scale.z;
+        } else {
+            // Culcat pe X → se ridică
+            std::swap(scale.y, scale.x);
+            generateVertices();
+            if (vbo != 0) {
+                glBindBuffer(GL_ARRAY_BUFFER, vbo);
+                glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(float),
+                    vertices.data(), GL_STATIC_DRAW);
+            }
+            position.z -= scale.x / 2.0f + scale.z / 2.0f;
+
+            isStanding = 1;
+        }
+        position.y = scale.y / 2.0f;
+    }
+
+    void Cuboid::moveDown() {
+        updateOrientation();
+        if (isStanding) {
+            std::swap(scale.y, scale.z);
+            generateVertices();
+            if (vbo != 0) {
+                glBindBuffer(GL_ARRAY_BUFFER, vbo);
+                glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(float),
+                    vertices.data(), GL_STATIC_DRAW);
+            }
+            position.z += scale.z / 2.0f + scale.x / 2.0f;
+
+            isStanding = 0;
+        } else if (scale.z > scale.x) {
+            position.z += scale.z;
+        } else {
+            std::swap(scale.y, scale.x);
+            generateVertices();
+            if (vbo != 0) {
+                glBindBuffer(GL_ARRAY_BUFFER, vbo);
+                glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(float),
+                    vertices.data(), GL_STATIC_DRAW);
+            }
+            position.z += scale.x / 2.0f + scale.z / 2.0f;
+
+            isStanding = 1;
+        }
+        position.y = scale.y / 2.0f;
+    }
+
+    void Cuboid::moveLeft() {
+        updateOrientation();
+        if (isStanding) {
+            std::swap(scale.y, scale.x);
+            generateVertices();
+            if (vbo != 0) {
+                glBindBuffer(GL_ARRAY_BUFFER, vbo);
+                glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(float),
+                    vertices.data(), GL_STATIC_DRAW);
+            }
+            position.x -= scale.x / 2.0f + scale.z / 2.0f;
+        } else if (scale.x > scale.z) {
+            position.x -= scale.x;
+        } else {
+            std::swap(scale.y, scale.z);
+            generateVertices();
+            if (vbo != 0) {
+                glBindBuffer(GL_ARRAY_BUFFER, vbo);
+                glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(float),
+                    vertices.data(), GL_STATIC_DRAW);
+            }
+            position.x -= scale.x / 2.0f + scale.z / 2.0f;
+        }
+        position.y = scale.y / 2.0f;
+    }
+
+    void Cuboid::moveRight() {
+        updateOrientation();
+        if (isStanding) {
+            std::swap(scale.y, scale.x);
+            generateVertices();
+            if (vbo != 0) {
+                glBindBuffer(GL_ARRAY_BUFFER, vbo);
+                glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(float),
+                    vertices.data(), GL_STATIC_DRAW);
+            }
+            position.x += scale.x / 2.0f + scale.z / 2.0f;  // Fix: era 1.0f fix
+        } else if (scale.x > scale.z) {
+            position.x += scale.x;
+        } else {
+            std::swap(scale.y, scale.z);
+            generateVertices();
+            if (vbo != 0) {
+                glBindBuffer(GL_ARRAY_BUFFER, vbo);
+                glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(float),
+                    vertices.data(), GL_STATIC_DRAW);
+            }
+            position.x += scale.x / 2.0f + scale.z / 2.0f;
+        }
+        position.y = scale.y / 2.0f;
+    }
+
+    void Cuboid::updateOrientation() {
+        //Verifica daca cuboidul sta in picioare sau culcat
+        // În picioare: scale.x == scale.z (de obicei 1x0.5x1 sau similar)
+        // Culcat: scale.x != scale.z (de obicei 1x0.5x2 sau 2x0.5x1)
+
+        isStanding = (abs(scale.x - scale.z) < 0.1f);
     }
 }

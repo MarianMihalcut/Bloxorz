@@ -25,7 +25,7 @@ void main(){
     vec3 viewDirection = normalize(viewDir);
     vec3 reflectDir = reflect(-lightDirection,normal);
     float spec = pow(max(dot(viewDirection, reflectDir), 0.0), 32.0); //de revizuit
-    vec3 specular = spec * vec3(1.0,1.0,1.0);
+    vec3 specular = spec * vec3(1.0, 1.0, 1.0);
 
     //combinam rezultatele
     vec3 result = ambient + diffuse + specular;

@@ -46,7 +46,7 @@ void init() {
     printf("Renderer: %s\n", renderer);
     printf("OpenGL version supported %s\n", version);
 
-    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glEnable(GL_DEPTH_TEST);
 
     glewInit();
@@ -54,8 +54,8 @@ void init() {
     //creare cuboid Bloxorz
     cuboid = new Cuboid(
         glm::vec3(0.0f, 0.25f, 0.0f), //position
-        glm::vec3(1.0f, 0.5f, 2.0f), //scale
-        glm::vec3(0.2f, 0.6f, 1.0f) //color
+        glm::vec3(0.5f, 1.0f, 0.5f), //scale
+        glm::vec3(1.0f, 0.0f, 1.0f) //color
         );
     cuboid->init();
 }
@@ -92,18 +92,25 @@ void keyboard(unsigned char key, int x, int y) {
 void specialKeyboard(int key, int x, int y) {
     switch (key) {
         case GLUT_KEY_UP:
-            cuboid->rotateY(rotAngleInc);
+            cuboid->moveUp();
             break;
         case GLUT_KEY_DOWN:
-            cuboid->rotateY(-rotAngleInc);
+            cuboid->moveDown();
             break;
         case GLUT_KEY_LEFT:
-            cuboid->move(glm::vec3(-0.1f, 0.0f, 0.0f));
+            cuboid->moveLeft();
             break;
         case GLUT_KEY_RIGHT:
-            cuboid->move(glm::vec3(0.1f, 0.0f, 0.0f));
+            cuboid->moveRight();
             break;
     }
+
+    printf("Pozitie: (%.1f, %.1f, %.1f) - %s\n",
+           cuboid->getPosition().x,
+           cuboid->getPosition().y,
+           cuboid->getPosition().z,
+           cuboid->getIsStanding() ? "In picioare" : "Culcat");
+
     glutPostRedisplay();
 }
 

@@ -32,6 +32,8 @@ namespace ObjectModel {
         glm::mat4 projectionMatrix, viewMatrix;
         glm::vec3 lightPos, viewPos;
 
+        bool isStanding;
+
         void generateVertices();
 
     public:
@@ -57,6 +59,13 @@ namespace ObjectModel {
 
         void move(glm::vec3 delta);
         void rotateY(float angle);
+
+        bool getIsStanding();
+        void moveUp();
+        void moveDown();
+        void moveLeft();
+        void moveRight();
+        void updateOrientation();
     };
 
 }
