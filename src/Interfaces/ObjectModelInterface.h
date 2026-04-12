@@ -64,7 +64,7 @@ protected:
 
         if (infologLength > 0)
         {
-            infoLog = (char *)malloc(infologLength);
+            infoLog = (char *) malloc(infologLength);
             glGetProgramInfoLog(obj, infologLength, &charsWritten, infoLog);
             printf("%s\n", infoLog);
             free(infoLog);
@@ -81,7 +81,7 @@ public:
         vbo = 0;
     }
 
-    virtual ~ObjectModelInterface() {
+    ~ObjectModelInterface() {
         shader_programme = 0;
         vao = 0;
         ebo = 0;
@@ -89,9 +89,12 @@ public:
     }
 
     /// Declaram clasele abstracte, care trebuie implementate diferit in clasele copil
+
+    /// Afiseaza obiectul creat
     virtual void display() = 0; //display la obiectul creat
+
+    /// Initializeaza shaderele
     virtual void init() = 0; //initializari shadere
-    virtual void show_object() = 0; //afisare obiect in interfata
 };
 
 } // ObjectModel

@@ -5,6 +5,8 @@
 #ifndef BLOXORZ_SPG_CUBOID_H
 #define BLOXORZ_SPG_CUBOID_H
 
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include <vector>
 #include <glm/mat4x4.hpp>
 #include <glm/gtx/transform.hpp>
@@ -28,6 +30,9 @@ namespace ObjectModel {
         std::vector<float> vertices;
 
         glm::mat4 projectionMatrix, viewMatrix;
+        glm::vec3 lightPos, viewPos;
+
+        void generateVertices();
 
     public:
         Cuboid();
