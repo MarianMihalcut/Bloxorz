@@ -95,6 +95,8 @@ public:
 
     /// Initializeaza shaderele
     virtual void init() = 0; //initializari shadere
+
+    virtual void update(float deltaTime) = 0;
 };
 
 } // ObjectModel

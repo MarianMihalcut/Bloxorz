@@ -17,10 +17,14 @@ namespace ObjectModel {
     /// Implicit are marimea de 1 x 0.5 x 1.
     /// Implicit e de culoare albastra.
     Cuboid::Cuboid(){
-        position = glm::vec3(0.0f, 0.5f, 0.0f);
-        scale = glm::vec3(1.0f, 0.5f, 1.0f);
+        position = glm::vec3(0.0f, 0.25f, 0.0f);
+        targetPosition = position;
+        scale = glm::vec3(0.5f, 1.0f, 0.5f);
+        targetScale = scale;
         color = glm::vec3(0.2f, 0.6f, 1.0f);
         rotation = 0.0f;
+        targetRotation = 0.0f;
+        rotationAxis = glm::vec3(0.0f, 1.0f, 0.0f);
 
         nrFaces = 6;
         nrVerticesPerFace = 6;
@@ -29,34 +33,49 @@ namespace ObjectModel {
         lightPos = glm::vec3(5.0f, 10.0f, 5.0f);
         viewPos = glm::vec3(5.0f, 5.0f, 10.0f);
 
-        projectionMatrix = glm::perspective(PI / 6.0f,1.0f,0.1f,100.0f);
+        projectionMatrix = glm::perspective(glm::pi<float>() / 6.0f, 1.0f, 0.1f, 100.0f);
         viewMatrix = glm::lookAt(viewPos, glm::vec3(0.0f, 0.0f, 0.0f),
             glm::vec3(0.0f, 1.0f, 0.0f));
 
-        isStanding = 1;
+        isStanding = true;
+        animState = IDLE;
+        animProgress = 1.0f;
+        animSpeed = 2.0f;  // 2 secunde pentru o animație completă
 
         generateVertices();
     }
 
     Cuboid::Cuboid(glm::vec3 pos, glm::vec3 scl, glm::vec3 col) {
         position = pos;
+        targetPosition = pos;
         scale = scl;
+        targetScale = scl;
         color = col;
+
         rotation = 0.0f;
+        targetRotation = 0.0f;
+        rotationAxis = glm::vec3(0.0f, 1.0f, 0.0f);
 
         nrFaces = 6;
         nrVerticesPerFace = 6;
         nrVertices = nrFaces * nrVerticesPerFace;
 
         lightPos = glm::vec3(5.0f, 10.0f, 5.0f);
-        viewPos = glm::vec3(10.0f, 5.0f, 5.0f);
+        viewPos = glm::vec3(5.0f, 5.0f, 10.0f);
 
-        projectionMatrix = glm::perspective(PI / 6.0f, 1.0f, 0.1f, 100.0f);
+        projectionMatrix = glm::perspective(glm::pi<float>() / 6.0f, 1.0f, 0.1f, 100.0f);
         viewMatrix = glm::lookAt(viewPos, glm::vec3(0.0f, 0.0f, 0.0f),
             glm::vec3(0.0f, 1.0f, 0.0f));
 
-        isStanding = 1;
+        animState = IDLE;
+        animProgress = 1.0f;
+        animSpeed = 4.0f;
 
+        // Determinăm dacă stă în picioare bazat pe înălțimea (Y) primită
+        // Dacă înălțimea e ~1.0, înseamnă că e în picioare.
+        updateOrientation();
+
+        //generam geometria initiala
         generateVertices();
     }
 
@@ -297,139 +316,172 @@ namespace ObjectModel {
         return scale;
     }
 
-    void Cuboid::move(glm::vec3 delta) {
-        position += delta;
-    }
-
-    void Cuboid::rotateY(float angle) {
-        rotation += angle;
-    }
-
     bool Cuboid::getIsStanding() {
         updateOrientation();
         return isStanding;
     }
 
-    void Cuboid::moveUp() {
-        updateOrientation();
-        if (isStanding) {
-            // În picioare → se culcă pe Z
-            std::swap(scale.y, scale.z);
-            generateVertices();
-            if (vbo != 0) {
-                glBindBuffer(GL_ARRAY_BUFFER, vbo);
-                glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(float),
-                    vertices.data(), GL_STATIC_DRAW);
-            }
-            position.z -= scale.z / 2.0f + scale.x / 2.0f;
+    void Cuboid::startAnimation(AnimationState state, glm::vec3 newPos, glm::vec3 newScale,
+                                float newRot, glm::vec3 rotAxis) {
+        animState = state;
+        targetPosition = newPos;
+        targetScale = newScale;
+        targetRotation = newRot;
+        rotationAxis = rotAxis;
+        animProgress = 0.0f;
+    }
 
-            isStanding = 0;
-        } else if (scale.z > scale.x) {
-            // Culcat pe Z → alunecă
-            position.z -= scale.z;
-        } else {
-            // Culcat pe X → se ridică
-            std::swap(scale.y, scale.x);
-            generateVertices();
-            if (vbo != 0) {
-                glBindBuffer(GL_ARRAY_BUFFER, vbo);
-                glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(float),
-                    vertices.data(), GL_STATIC_DRAW);
-            }
-            position.z -= scale.x / 2.0f + scale.z / 2.0f;
+    void Cuboid::update(float deltaTime) {
+        if (animState != IDLE) {
+            animProgress += deltaTime * animSpeed;
 
-            isStanding = 1;
+            if (animProgress >= 1.0f) {
+                // Animație completă
+                animProgress = 1.0f;
+                position = targetPosition;
+                scale = targetScale;
+                rotation = targetRotation;
+                animState = IDLE;
+
+                // Actualizează geometria
+                generateVertices();
+                if (vbo != 0) {
+                    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+                    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+                }
+            } else {
+                // Interpolare liniară pentru poziție și scale
+                position = glm::mix(position, targetPosition, animProgress);
+                scale = glm::mix(scale, targetScale, animProgress);
+                rotation = glm::mix(rotation, targetRotation, animProgress);
+
+                // Actualizează geometria pentru scale intermediar
+                generateVertices();
+                if (vbo != 0) {
+                    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+                    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+                }
+            }
+            updateOrientation();
         }
-        position.y = scale.y / 2.0f;
+    }
+
+    bool Cuboid::isAnimating() {
+        return animState != IDLE;
+    }
+
+    void Cuboid::moveUp() {
+        if (animState != IDLE) return;  // Nu permite input în timpul animației
+        updateOrientation();
+
+        glm::vec3 newPos = position;
+        glm::vec3 newScale = scale;
+
+        if (isStanding) {
+            // Din picioare -> Culcat pe axa Z
+            newPos += glm::vec3(0.0f, -0.25f, -0.75f);
+            newScale = glm::vec3(1.0f, 0.5f, 0.5f);
+            startAnimation(MOVING_UP, newPos, newScale, glm::radians(-90.0f),
+                glm::vec3(1.0f, 0.0f, 0.0f));
+        } else {
+            if (scale.z > 0.75f) {
+                // Este deja culcat pe Z -> Se ridică în picioare
+                newPos += glm::vec3(0.0f, 0.25f, -0.75f);
+                newScale = glm::vec3(0.5f, 1.0f, 0.5f);
+                startAnimation(STANDING_UP, newPos, newScale, 0.0f,
+                    glm::vec3(1.0f, 0.0f, 0.0f));
+            } else {
+                // Este culcat pe X -> Merge "la pas" (slide) în sus, rămâne culcat pe X
+                newPos += glm::vec3(0.0f, 0.0f, -0.5f);
+                startAnimation(MOVING_UP, newPos, newScale, 0.0f,
+                    glm::vec3(1.0f, 0.0f, 0.0f));
+            }
+        }
     }
 
     void Cuboid::moveDown() {
+        if (animState != IDLE) return;
         updateOrientation();
+
+        glm::vec3 newPos = position;
+        glm::vec3 newScale = scale;
+
         if (isStanding) {
-            std::swap(scale.y, scale.z);
-            generateVertices();
-            if (vbo != 0) {
-                glBindBuffer(GL_ARRAY_BUFFER, vbo);
-                glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(float),
-                    vertices.data(), GL_STATIC_DRAW);
-            }
-            position.z += scale.z / 2.0f + scale.x / 2.0f;
-
-            isStanding = 0;
-        } else if (scale.z > scale.x) {
-            position.z += scale.z;
+            newPos += glm::vec3(0.0f, -0.25f, 0.75f);
+            newScale = glm::vec3(0.5f, 0.5f, 1.0f);
+            startAnimation(MOVING_DOWN, newPos, newScale, glm::radians(90.0f),
+                glm::vec3(1.0f, 0.0f, 0.0f));
         } else {
-            std::swap(scale.y, scale.x);
-            generateVertices();
-            if (vbo != 0) {
-                glBindBuffer(GL_ARRAY_BUFFER, vbo);
-                glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(float),
-                    vertices.data(), GL_STATIC_DRAW);
+            if (scale.z > 0.75f) {
+                newPos += glm::vec3(0.0f, 0.25f, 0.75f);
+                newScale = glm::vec3(0.5f, 1.0f, 0.5f);
+                startAnimation(STANDING_UP, newPos, newScale, 0.0f,
+                    glm::vec3(1.0f, 0.0f, 0.0f));
+            } else {
+                newPos += glm::vec3(0.0f, 0.0f, 0.5f);
+                startAnimation(MOVING_DOWN, newPos, newScale, 0.0f,
+                    glm::vec3(1.0f, 0.0f, 0.0f));
             }
-            position.z += scale.x / 2.0f + scale.z / 2.0f;
-
-            isStanding = 1;
         }
-        position.y = scale.y / 2.0f;
     }
 
     void Cuboid::moveLeft() {
+        if (animState != IDLE) return;
         updateOrientation();
+
+        glm::vec3 newPos = position;
+        glm::vec3 newScale = scale;
+
         if (isStanding) {
-            std::swap(scale.y, scale.x);
-            generateVertices();
-            if (vbo != 0) {
-                glBindBuffer(GL_ARRAY_BUFFER, vbo);
-                glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(float),
-                    vertices.data(), GL_STATIC_DRAW);
-            }
-            position.x -= scale.x / 2.0f + scale.z / 2.0f;
-        } else if (scale.x > scale.z) {
-            position.x -= scale.x;
+            // Din picioare -> Culcat pe axa X
+            newPos += glm::vec3(-0.75f, -0.25f, 0.0f);
+            newScale = glm::vec3(1.0f, 0.5f, 0.5f);
+            startAnimation(MOVING_LEFT, newPos, newScale, glm::radians(90.0f),
+                glm::vec3(0.0f, 0.0f, 1.0f));
         } else {
-            std::swap(scale.y, scale.z);
-            generateVertices();
-            if (vbo != 0) {
-                glBindBuffer(GL_ARRAY_BUFFER, vbo);
-                glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(float),
-                    vertices.data(), GL_STATIC_DRAW);
+            if (scale.x > 0.75f) {
+                // Este deja culcat pe X -> Se ridică în picioare
+                newPos += glm::vec3(-0.75f, 0.25f, 0.0f);
+                newScale = glm::vec3(0.5f, 1.0f, 0.5f);
+                startAnimation(STANDING_UP, newPos, newScale, 0.0f,
+                    glm::vec3(0.0f, 0.0f, 1.0f));
+            } else {
+                // Este culcat pe Z -> Slide spre stânga
+                newPos += glm::vec3(-0.5f, 0.0f, 0.0f);
+                startAnimation(MOVING_LEFT, newPos, newScale, 0.0f,
+                    glm::vec3(0.0f, 0.0f, 1.0f));
             }
-            position.x -= scale.x / 2.0f + scale.z / 2.0f;
         }
-        position.y = scale.y / 2.0f;
     }
 
     void Cuboid::moveRight() {
+        if (animState != IDLE) return;
         updateOrientation();
+
+        glm::vec3 newPos = position;
+        glm::vec3 newScale = scale;
+
         if (isStanding) {
-            std::swap(scale.y, scale.x);
-            generateVertices();
-            if (vbo != 0) {
-                glBindBuffer(GL_ARRAY_BUFFER, vbo);
-                glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(float),
-                    vertices.data(), GL_STATIC_DRAW);
-            }
-            position.x += scale.x / 2.0f + scale.z / 2.0f;  // Fix: era 1.0f fix
-        } else if (scale.x > scale.z) {
-            position.x += scale.x;
+            newPos += glm::vec3(0.75f, -0.25f, 0.0f);
+            newScale = glm::vec3(1.0f, 0.5f, 0.5f);
+            startAnimation(MOVING_RIGHT, newPos, newScale, glm::radians(-90.0f),
+                glm::vec3(0.0f, 0.0f, 1.0f));
         } else {
-            std::swap(scale.y, scale.z);
-            generateVertices();
-            if (vbo != 0) {
-                glBindBuffer(GL_ARRAY_BUFFER, vbo);
-                glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(float),
-                    vertices.data(), GL_STATIC_DRAW);
+            if (scale.x > 0.75f) {
+                newPos += glm::vec3(0.75f, 0.25f, 0.0f);
+                newScale = glm::vec3(0.5f, 1.0f, 0.5f);
+                startAnimation(STANDING_UP, newPos, newScale, 0.0f,
+                    glm::vec3(0.0f, 0.0f, 1.0f));
+            } else {
+                newPos += glm::vec3(0.5f, 0.0f, 0.0f);
+                startAnimation(MOVING_RIGHT, newPos, newScale, 0.0f,
+                    glm::vec3(0.0f, 0.0f, 1.0f));
             }
-            position.x += scale.x / 2.0f + scale.z / 2.0f;
         }
-        position.y = scale.y / 2.0f;
     }
 
     void Cuboid::updateOrientation() {
-        //Verifica daca cuboidul sta in picioare sau culcat
-        // În picioare: scale.x == scale.z (de obicei 1x0.5x1 sau similar)
-        // Culcat: scale.x != scale.z (de obicei 1x0.5x2 sau 2x0.5x1)
-
-        isStanding = (abs(scale.x - scale.z) < 0.1f);
+        //Daca coordonata maxima e pe y, sigur este cuboidul in picioare
+        isStanding = (scale.y > 0.75f);
     }
 }

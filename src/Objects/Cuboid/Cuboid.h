@@ -16,12 +16,26 @@
 #include "../../Interfaces/ObjectModelInterface.h"
 
 namespace ObjectModel {
+    enum AnimationState {
+        IDLE,
+        MOVING_UP,
+        MOVING_DOWN,
+        MOVING_LEFT,
+        MOVING_RIGHT,
+        STANDING_UP,
+        LAYING_DOWN
+    };
+
     class Cuboid : public ObjectModelInterface {
     private:
         glm::vec3 position;
+        glm::vec3 targetPosition;
         glm::vec3 scale;
+        glm::vec3 targetScale;
         glm::vec3 color;
         float rotation;
+        float targetRotation;
+        glm::vec3 rotationAxis;
 
         int nrFaces;
         int nrVerticesPerFace;
@@ -33,8 +47,13 @@ namespace ObjectModel {
         glm::vec3 lightPos, viewPos;
 
         bool isStanding;
+        AnimationState animState;
+        float animProgress; //de la 0% la 100%
+        float animSpeed; //viteza animatiei
 
         void generateVertices();
+        void startAnimation(AnimationState state, glm::vec3 newPos, glm::vec3 newScale,
+                           float newRot, glm::vec3 rotAxis);
 
     public:
         Cuboid();
@@ -43,6 +62,7 @@ namespace ObjectModel {
 
         void init() override;
         void display() override;
+        void update(float deltaTime) override;
 
         void setProjectionMatrix(glm::mat4 proj);
         void setViewMatrix(glm::mat4 view);
@@ -56,11 +76,9 @@ namespace ObjectModel {
 
         glm::vec3 getPosition();
         glm::vec3 getScale();
-
-        void move(glm::vec3 delta);
-        void rotateY(float angle);
-
         bool getIsStanding();
+        bool isAnimating();  // Verifică dacă e în animație
+
         void moveUp();
         void moveDown();
         void moveLeft();
