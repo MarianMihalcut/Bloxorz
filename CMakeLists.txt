@@ -13,7 +13,9 @@ include_directories(glew_freeglut/include)
 include_directories(glew_freeglut/freeglut/freeglut-3.8.0/include)
 
 file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.h") # Comandă utilă să nu mai scrii manual fiecare fișier
-add_executable(${PROJECT_NAME} ${SOURCES})
+add_executable(${PROJECT_NAME} ${SOURCES}
+        src/Objects/Tiles/NormalTile.h
+        src/Objects/Tiles/ButtonTile.h)
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE FREEGLUT_STATIC)
 
