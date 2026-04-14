@@ -99,8 +99,8 @@ namespace ObjectModel {
         /// @param vertPath/fragPath - cai shadere
         ButtonTile(int gx, int gz, ButtonMode bMode = ButtonMode::TOGGLE,
                    std::function<void(bool)> callback = nullptr,
-                   const std::string& vertPath = "src/Objects/Tile/tile.vert",
-                   const std::string& fragPath = "src/Objects/Tile/tile.frag")
+                   const std::string& vertPath = "../src/Objects/Tiles/tile.vert",
+                   const std::string& fragPath = "../src/Objects/Tiles/tile.frag")
             : Tile(gx, gz,
                    1.0f, 0.2f, 1.0f,
                    COLOR_BODY, vertPath, fragPath)
@@ -168,6 +168,11 @@ namespace ObjectModel {
             glDrawElements(GL_TRIANGLES, indicatorIndexCount, GL_UNSIGNED_INT, nullptr);
             glBindVertexArray(0);
         }
+
+        void display() override {}
+
+        void update(float deltaTime) override {}
+
     };
 }
 

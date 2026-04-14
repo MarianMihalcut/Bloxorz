@@ -14,8 +14,8 @@ namespace ObjectModel {
         /// @param gx, gz  - pozitia in grila
         /// @param vertPath, fragPath - cai catre fisierele shader
         NormalTile(int gx, int gz,
-                   const std::string& vertPath = "shaders/tile.vert",
-                   const std::string& fragPath = "shaders/tile.frag")
+                   const std::string& vertPath = "../src/Objects/Tiles/tile.vert",
+                   const std::string& fragPath = "../src/Objects/Tiles/tile.frag")
             : Tile(gx, gz,
                    1.0f, 0.2f, 1.0f,          // dimensiuni standard tile
                    glm::vec3(0.36f, 0.55f, 0.72f), // albastru-gri

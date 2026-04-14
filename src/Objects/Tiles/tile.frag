@@ -1,6 +1,7 @@
 #version 400
 
 in vec3 fragPos;
+in vec3 localPos;
 in vec3 normal;
 in vec3 color;
 
@@ -23,5 +24,22 @@ void main() {
 
     // Rezultatul final combină lumina ambientală cu cea difuză
     vec3 result = ambient + diffuse;
+
+    //Implementam logica pentru muchii
+    if (norm.y > 0.9) {
+        // Presupunând că tile-ul are lățimea 1.0, marginile sunt la +/- 0.5
+        float edgeThreshold = 0.45; // Cu cât e mai mare, cu atât e mai subțire muchia
+
+        // Verificăm distanța față de centru pe axele X și Z
+        bool isNearEdgeX = abs(localPos.x) > edgeThreshold;
+        bool isNearEdgeZ = abs(localPos.z) > edgeThreshold;
+
+        if (isNearEdgeX || isNearEdgeZ) {
+            vec3 edgeColor = vec3(1.0, 1.0, 1.0); // Culoarea muchiei (ex: Alb sau un albastru deschis)
+            // Putem face un mix între culoarea calculată și cea a muchiei pentru un aspect mai fin
+            result = mix(result, edgeColor, 0.8);
+        }
+    }
+
     frag_colour = vec4(result, 1.0);
 }

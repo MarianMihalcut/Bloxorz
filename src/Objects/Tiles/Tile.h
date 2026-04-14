@@ -5,12 +5,13 @@
 #ifndef BLOXORZ_SPG_TILE_H
 #define BLOXORZ_SPG_TILE_H
 
+#include <glew.h>
 #include "src/Interfaces/ObjectModelInterface.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <vector>
 #include <string>
-#include <glew.h>
+
 
 namespace ObjectModel {
     /// Tipurile de tile-uri posibile

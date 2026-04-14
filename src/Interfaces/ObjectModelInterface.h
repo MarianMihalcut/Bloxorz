@@ -9,6 +9,7 @@
 #include <string>
 #include <GL/gl.h>
 #include <glm/gtc/type_ptr.hpp>
+#include <glew.h>
 
 
 namespace ObjectModel {

@@ -10,8 +10,11 @@ uniform mat4 modelMatrix;
 out vec3 fragPos;
 out vec3 normal;
 out vec3 color;
+out vec3 localPos;
 
 void main() {
+    localPos = v_pos;
+
     // Calculăm poziția fragmentului în coordonate universale
     fragPos = vec3(modelMatrix * vec4(v_pos, 1.0));
 
