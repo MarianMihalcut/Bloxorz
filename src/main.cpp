@@ -3,7 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <stdio.h>
+#include <cstdio>
 #include <glew.h>
 #include <GL/freeglut.h>
 #include <glm/mat4x4.hpp>
@@ -11,6 +11,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/constants.hpp>
 #include <chrono>
+#include <GL/glu.h>
 
 #include "glew.h"
 #include "Objects/Cuboid/Cuboid.h"
@@ -30,8 +31,14 @@ static constexpr float TILE_W = 1.0f;  // latimea unui tile in spatiu world
 static constexpr float TILE_H = 0.2f;  // inaltimea unui tile
 static constexpr float TILE_D = 1.0f;  // adancimea unui tile
 
-// Inaltimea la care "sta" cuboid-ul deasupra tile-ului
-static constexpr float CUBOID_BASE_Y = TILE_H + 0.5f; // jumatatea inaltimii cuboid-ului (scala 1.0)
+// Y-centrul cuboidului in picioare deasupra unui tile:
+//   fata superioara tile = TILE_H/2 = 0.1
+//   jumatatea inaltimii cuboidului in picioare (scale.y=2 → Ly=1.0)
+static constexpr float CUBOID_STAND_Y = TILE_H / 2.0f + 1.0f; // 1.1f
+
+// Pozitia si scala initiala
+static const glm::vec3 START_POS   = glm::vec3(0.0f, CUBOID_STAND_Y, 0.0f);
+static const glm::vec3 START_SCALE = glm::vec3(1.0f, 2.0f, 1.0f);
 
 // ---------------------------------------------------------------------------
 // Starea globala a scenei
@@ -47,9 +54,11 @@ BridgeTile* bridgeTile1 = nullptr;
 BridgeTile* bridgeTile2 = nullptr;
 
 glm::mat4 projectionMatrix, viewMatrix;
-glm::vec3 lightPos(5.0f, 10.0f, 5.0f);
-glm::vec3 viewPos(5.0f, 5.0f, 10.0f);
-glm::vec3 viewTarget(3.0f, 0.0f, 3.0f); // centrul nivelului
+glm::vec3 lightPos(3.0f, 8.0f, 3.0f);
+glm::vec3 viewPos(4.0f, 8.0f, 10.0f);
+glm::vec3 viewTarget(2.5f, 0.0f, 1.5f); // centrul nivelului
+
+int windowW = 900, windowH = 700;
 
 // Pentru delta time
 high_resolution_clock::time_point lastTime;
@@ -60,8 +69,42 @@ int cuboidGridX = 0;
 int cuboidGridZ = 0;
 
 // ---------------------------------------------------------------------------
-// Helper: gaseste tile-ul la coordonatele (gx, gz)
+// Stare joc
 // ---------------------------------------------------------------------------
+enum class GameState { PLAYING, GAME_OVER };
+GameState gameState    = GameState::PLAYING;
+float gameOverTimer = 0.0f;
+static constexpr float GAME_OVER_DURATION = 2.0f; // secunde pana la reset
+
+// ---------------------------------------------------------------------------
+// Helper: tile-urile ocupate de cuboid, calculate din pozitia si scala world
+//
+// Cuboidul poate ocupa 1 sau 2 tile-uri.
+// Centrele tile-urilor sunt la pozitii intregi (gx * TILE_W, 0, gz * TILE_D).
+// Formula: din footprint [pos - half, pos + half] pe X si Z,
+//          gasim toate centrele de tile incluse.
+// ---------------------------------------------------------------------------
+std::vector<std::pair<int,int>> getOccupiedTiles() {
+    glm::vec3 pos = cuboid->getPosition();
+    glm::vec3 scl = cuboid->getScale();
+
+    float hx = scl.x / 2.0f;
+    float hz = scl.z / 2.0f;
+
+    // Primul si ultimul tile pe fiecare axa
+    // (pos - half + 0.5) rotunjit = primul centru de tile acoperit
+    int x1 = (int)roundf(pos.x - hx + 0.5f);
+    int x2 = (int)roundf(pos.x + hx - 0.5f);
+    int z1 = (int)roundf(pos.z - hz + 0.5f);
+    int z2 = (int)roundf(pos.z + hz - 0.5f);
+
+    std::vector<std::pair<int,int>> result;
+    for (int x = x1; x <= x2; x++)
+        for (int z = z1; z <= z2; z++)
+            result.push_back({x, z});
+    return result;
+}
+
 Tile* getTileAt(int gx, int gz) {
     for (auto& t : tiles) {
         if (t->getGridX() == gx && t->getGridZ() == gz) {
@@ -72,41 +115,97 @@ Tile* getTileAt(int gx, int gz) {
 }
 
 // ---------------------------------------------------------------------------
-// Logica de interactiune: apelata dupa fiecare miscare a cuboid-ului
+// Randare text 2D (overlay Game Over)
+// Foloseste fixed-function pipeline (context compatibility) + GLUT bitmap fonts
 // ---------------------------------------------------------------------------
-void onCuboidLanded() {
-    // Verificam daca cuboid-ul se afla pe un tile activ
-    Tile* current = getTileAt(cuboidGridX, cuboidGridZ);
+/*void renderText2D(const std::string& text, int x, int y,
+                  float r = 1.0f, float g = 0.0f, float b = 0.0f)
+{
+    // Dezactivam shader-ul curent
+    glUseProgram(0);
+    glDisable(GL_DEPTH_TEST);
 
-    if (!current || !current->isActive()) {
-        // Cuboid-ul a cazut in gol - reset pozitie
-        printf("[Game] Cuboid a cazut! Reset pozitie.\n");
-        cuboidGridX = 0;
-        cuboidGridZ = 0;
-        cuboid->setPosition(glm::vec3(
-            cuboidGridX * TILE_W,
-            CUBOID_BASE_Y,
-            cuboidGridZ * TILE_D
-        ));
-        return;
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    gluOrtho2D(0, windowW, 0, windowH);
+
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    glColor3f(r, g, b);
+    glWindowPos2i(x, y);
+    for (char c : text)
+        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
+
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+
+    glEnable(GL_DEPTH_TEST);
+}*/
+
+// ---------------------------------------------------------------------------
+// Logica joc: verificare pozitie dupa fiecare miscare terminata
+// Apelata din specialKeyboard() si din display() cand animatia tocmai s-a incheiat
+// ---------------------------------------------------------------------------
+void checkLanding() {
+    if (cuboid->isAnimating()) return;
+    if (gameState == GameState::GAME_OVER) return;
+
+    auto occupied = getOccupiedTiles();
+
+    // Verificam ca TOATE tile-urile ocupate exista si sunt active
+    for (auto [tx, tz] : occupied) {
+        Tile* t = getTileAt(tx, tz);
+        if (!t || !t->isActive()) {
+            printf("[Game] Bloc a cazut la tile (%d, %d)! GAME OVER.\n", tx, tz);
+            gameState     = GameState::GAME_OVER;
+            gameOverTimer = 0.0f;
+            return;
+        }
     }
 
-    // Daca e ButtonTile, il apasam
-    if (current->getType() == TileType::BUTTON) {
-        auto* btn = static_cast<ButtonTile*>(current);
-        btn->press();
+    // Aterizare valida: verificam butoane
+    for (auto [tx, tz] : occupied) {
+        Tile* t = getTileAt(tx, tz);
+        if (t && t->getType() == TileType::BUTTON) {
+            auto* btn = static_cast<ButtonTile*>(t);
+            btn->press();
+            printf("[Game] Buton apasat la (%d, %d).\n", tx, tz);
+        }
+    }
+
+    // Log pozitie curenta
+    printf("[Game] Bloc pe tile-uri: ");
+    for (auto [tx, tz] : occupied) printf("(%d,%d) ", tx, tz);
+    printf("\n");
+}
+
+// Apelata cand blocul pleaca de pe un tile cu buton
+void releaseButtons(const std::vector<std::pair<int,int>>& prevOccupied) {
+    for (auto [tx, tz] : prevOccupied) {
+        Tile* t = getTileAt(tx, tz);
+        if (t && t->getType() == TileType::BUTTON) {
+            auto* btn = static_cast<ButtonTile*>(t);
+            if (btn->getMode() == ButtonTile::ButtonMode::HOLD) {
+                btn->release();
+                printf("[Game] Buton eliberat la (%d, %d).\n", tx, tz);
+            }
+        }
     }
 }
 
-// Eliberam butonul de pe care am plecat
-void onCuboidLeft(int prevX, int prevZ) {
-    Tile* prev = getTileAt(prevX, prevZ);
-    if (prev && prev->getType() == TileType::BUTTON) {
-        auto* btn = static_cast<ButtonTile*>(prev);
-        if (btn->getMode() == ButtonTile::ButtonMode::HOLD) {
-            btn->release();
-        }
-    }
+// Reset complet la pozitia initiala
+void resetGame() {
+    cuboid->setPosition(START_POS);
+    cuboid->setScale(START_SCALE);
+    cuboid->setRotation(0.0f);
+    gameState     = GameState::PLAYING;
+    gameOverTimer = 0.0f;
+    printf("[Game] Reset. Bloc la pozitia initiala.\n");
 }
 
 //DOAR PENTRU SCOPURI DE TEST
@@ -177,6 +276,8 @@ void buildLevel() {
     for (auto& t : tiles) {
         t->init();
     }
+
+    printf("[Game] Nivel incarcat. Tile-uri: %zu\n", tiles.size());
 }
 
 // ---------------------------------------------------------------------------
@@ -196,11 +297,27 @@ void display()
     float deltaTime = duration<float>(currentTime - lastTime).count();
     lastTime = currentTime;
 
-    // --- Update ---
+    // --- Update tile-uri---
     cuboid->update(deltaTime);
 
     for (auto& t : tiles) {
         t->update(deltaTime);
+    }
+
+    if (gameState == GameState::PLAYING) {
+        // Update cuboid
+        bool wasAnimating = cuboid->isAnimating();
+        cuboid->update(deltaTime);
+        bool isNowIdle = wasAnimating && !cuboid->isAnimating();
+
+        // Verificam aterizarea exact cand animatia s-a incheiat
+        if (isNowIdle)
+            checkLanding();
+
+    } else { // GAME_OVER
+        gameOverTimer += deltaTime;
+        if (gameOverTimer >= GAME_OVER_DURATION)
+            resetGame();
     }
 
     // --- Randare tile-uri ---
@@ -217,13 +334,52 @@ void display()
     cuboid->setViewPos(viewPos);
     cuboid->display();
 
+    // --- Overlay Game Over ---
+    /*if (gameState == GameState::GAME_OVER) {
+        // Fundal semi-transparent (quad rosu inchis peste tot ecranul)
+        glUseProgram(0);
+        glDisable(GL_DEPTH_TEST);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        glMatrixMode(GL_PROJECTION);
+        glPushMatrix();
+        glLoadIdentity();
+        gluOrtho2D(0, windowW, 0, windowH);
+        glMatrixMode(GL_MODELVIEW);
+        glPushMatrix();
+        glLoadIdentity();
+
+        glColor4f(0.5f, 0.0f, 0.0f, 0.45f);
+        glBegin(GL_QUADS);
+        glVertex2i(0,       0);
+        glVertex2i(windowW, 0);
+        glVertex2i(windowW, windowH);
+        glVertex2i(0,       windowH);
+        glEnd();
+
+        glPopMatrix();
+        glMatrixMode(GL_PROJECTION);
+        glPopMatrix();
+        glMatrixMode(GL_MODELVIEW);
+
+        glDisable(GL_BLEND);
+        glEnable(GL_DEPTH_TEST);
+
+        // Text "GAME OVER"
+        int textX = windowW / 2 - 100;
+        int textY = windowH / 2 + 10;
+        renderText2D("GAME OVER", textX, textY, 1.0f, 1.0f, 1.0f);
+
+        // Sub-text cu countdown
+        int secondsLeft = (int)(GAME_OVER_DURATION - gameOverTimer) + 1;
+        std::string sub = "Reset in " + std::to_string(secondsLeft) + "s...";
+        renderText2D(sub, textX + 10, textY - 35, 0.9f, 0.9f, 0.9f);
+    }*/
+
     glutSwapBuffers();
     glFlush();
 
-    // Continuă să apeleze display pentru animație
-    //if (cuboid->isAnimating()) {
-    //    glutPostRedisplay();
-    //}
 }
 
 void init()
@@ -233,26 +389,28 @@ void init()
     printf("Renderer: %s\n", renderer);
     printf("OpenGL version supported %s\n", version);
 
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClearColor(0.12f, 0.12f, 0.18f, 1.0f);
     glEnable(GL_DEPTH_TEST);
 
     glewInit();
 
     // Cuboid-ul porneste deasupra tile-ului (0,0)
-    cuboid = new Cuboid(
-        glm::vec3(cuboidGridX * TILE_W, CUBOID_BASE_Y, cuboidGridZ * TILE_D),
-        glm::vec3(0.5f, 1.0f, 0.5f),   // scala: 1x1 tile, inaltime 1
-        glm::vec3(0.2f, 0.6f, 1.0f)    // culoare albastru
-    );
+    cuboid = new Cuboid(START_POS, START_SCALE, glm::vec3(0.2f, 0.6f, 1.0f));
     cuboid->init();
 
     buildLevel();
+
+    // Verificam pozitia de start
+    checkLanding();
+
     printf("[Game] Level construit. Folositi sagetile pentru a muta blocul.\n");
     printf("[Game] Gasiti butonul pentru a activa podul!\n");
 }
 
 void reshape(int w, int h)
 {
+    windowW = w;
+    windowH = h;
     glViewport(0, 0, w, h);
     projectionMatrix = glm::perspective(PI / 4.0f, (float)w / h, 0.1f, 100.0f);
     viewMatrix = glm::lookAt(viewPos, viewTarget, glm::vec3(0.0f, 1.0f, 0.0f));
@@ -267,12 +425,8 @@ void keyboard(unsigned char key, int x, int y)
             exit(0);
             break;
         case 'r': // Reset poziție
-            cuboidGridX = 0;
-            cuboidGridZ = 0;
-            cuboid->setPosition(glm::vec3(cuboidGridX * TILE_W, CUBOID_BASE_Y, cuboidGridZ * TILE_D));
-            cuboid->setScale(glm::vec3(0.5f, 1.0f, 0.5f));
-            cuboid->setRotation(0.0f);
-            printf("[Game] Pozitie resetata la (0,0).\n");
+        case 'R':
+            resetGame();
             break;
     }
     glutPostRedisplay();
@@ -283,28 +437,26 @@ void specialKeyboard(int key, int x, int y)
     // Nu miscam cuboid-ul in timp ce e in animatie
     if (cuboid->isAnimating()) return;
 
-    int prevX = cuboidGridX;
-    int prevZ = cuboidGridZ;
+    if (gameState == GameState::GAME_OVER) return; // blocat la game over
+
+    // Salvam tile-urile ocupate INAINTE de miscare (pentru release butoane HOLD)
+    auto prevOccupied = getOccupiedTiles();
 
     switch (key)
     {
         case GLUT_KEY_LEFT:
-            cuboidGridX --;
             cuboid->moveLeft();
             break;
             
         case GLUT_KEY_RIGHT:
-            cuboidGridX ++;
             cuboid->moveRight();
             break;
 
         case GLUT_KEY_UP:
-            cuboidGridZ --;
             cuboid->moveUp();
             break;
 
         case GLUT_KEY_DOWN:
-            cuboidGridZ ++;
             cuboid->moveDown();
             break;
 
@@ -312,10 +464,8 @@ void specialKeyboard(int key, int x, int y)
             return;
     }
 
-    printf("[Game] Cuboid mutat la (%d, %d)\n", cuboidGridX, cuboidGridZ);
-
-    onCuboidLeft(prevX, prevZ);
-    onCuboidLanded();
+    // Eliberam butoanele HOLD de pe care am plecat
+    releaseButtons(prevOccupied);
 
     glutPostRedisplay();
 }
@@ -325,7 +475,7 @@ int main(int argc, char** argv)
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH | GLUT_DOUBLE);
     glutInitWindowPosition(200, 200);
-    glutInitWindowSize(900, 700);
+    glutInitWindowSize(windowW, windowH);
     glutCreateWindow("Bloxorz SPG");
 
     init();
@@ -341,5 +491,3 @@ int main(int argc, char** argv)
     delete cuboid;
     return 0;
 }
-
-//TODO: De accentuat in partea de sus muchiile la tile-uri
