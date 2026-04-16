@@ -10,7 +10,7 @@
 #include <iostream>
 #include <cmath>
 #include <cstdio>
-#include "../../Interfaces/ObjectModelInterface.h"
+#include "../ObjectModelInterface.h"
 
 namespace ObjectModel {
 
@@ -417,6 +417,9 @@ namespace ObjectModel {
     ///   In picioare (Lz=0.5): centru sare 0.5 + 1.0 = 1.5 tile-uri in directia miscarii
     ///   Culcat (Lz=1.0):      centru sare 1.0 + 0.5 = 1.5 tile-uri
     ///   Alunecare:            centru sare 1.0 tile
+    ///
+    ///   ATENTIE! Unghiul nu se va modifica in animatie, pentru ca duce la miscari
+    ///   nefiresti ale cuboidului
     // -------------------------------------------------------------------------
 
     /// Tasta sus - blocul se misca in directia -Z
@@ -431,7 +434,7 @@ namespace ObjectModel {
             // In picioare → Culcat pe Z (larg pe axa Z)
             newPos += glm::vec3(0.0f, -0.5f, -1.5f);
             newScale = glm::vec3(1.0f, 1.0f, 2.0f);
-            startAnimation(MOVING_UP, newPos, newScale, glm::radians(-90.0f),
+            startAnimation(MOVING_UP, newPos, newScale, 0.0f,
                 glm::vec3(1.0f, 0.0f, 0.0f));
         } else {
             if (scale.z > 1.5f) {
@@ -461,7 +464,7 @@ namespace ObjectModel {
             // In picioare → Culcat pe Z
             newPos += glm::vec3(0.0f, -0.5f, 1.5f);
             newScale = glm::vec3(1.0f, 1.0f, 2.0f);
-            startAnimation(MOVING_DOWN, newPos, newScale, glm::radians(90.0f),
+            startAnimation(MOVING_DOWN, newPos, newScale, 0.0f,
                 glm::vec3(1.0f, 0.0f, 0.0f));
         } else {
             if (scale.z > 1.5f) {
@@ -491,7 +494,7 @@ namespace ObjectModel {
             // In picioare → Culcat pe X (larg pe axa X)
             newPos += glm::vec3(-1.5f, -0.5f, 0.0f);
             newScale = glm::vec3(2.0f, 1.0f, 1.0f);
-            startAnimation(MOVING_LEFT, newPos, newScale, glm::radians(90.0f),
+            startAnimation(MOVING_LEFT, newPos, newScale, 0.0f,
                 glm::vec3(0.0f, 0.0f, 1.0f));
         } else {
             if (scale.x > 1.5f) {
@@ -521,7 +524,7 @@ namespace ObjectModel {
             // In picioare → Culcat pe X
             newPos += glm::vec3(1.5f, -0.5f, 0.0f);
             newScale = glm::vec3(2.0f, 1.0f, 1.0f);
-            startAnimation(MOVING_RIGHT, newPos, newScale, glm::radians(-90.0f),
+            startAnimation(MOVING_RIGHT, newPos, newScale, 0.0f,
                 glm::vec3(0.0f, 0.0f, 1.0f));
         } else {
             if (scale.x > 1.5f) {

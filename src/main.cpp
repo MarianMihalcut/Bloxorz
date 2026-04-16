@@ -14,6 +14,9 @@
 #include <GL/glu.h>
 
 #include "glew.h"
+#include "Levels/Level.h"
+#include "Levels/Level1.h"
+#include "Levels/Level2.h"
 #include "Objects/Cuboid/Cuboid.h"
 #include "Objects/Tiles/NormalTile.h"
 #include "Objects/Tiles/ButtonTile.h"
@@ -114,38 +117,7 @@ Tile* getTileAt(int gx, int gz) {
     return nullptr;
 }
 
-// ---------------------------------------------------------------------------
-// Randare text 2D (overlay Game Over)
-// Foloseste fixed-function pipeline (context compatibility) + GLUT bitmap fonts
-// ---------------------------------------------------------------------------
-/*void renderText2D(const std::string& text, int x, int y,
-                  float r = 1.0f, float g = 0.0f, float b = 0.0f)
-{
-    // Dezactivam shader-ul curent
-    glUseProgram(0);
-    glDisable(GL_DEPTH_TEST);
 
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    gluOrtho2D(0, windowW, 0, windowH);
-
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
-
-    glColor3f(r, g, b);
-    glWindowPos2i(x, y);
-    for (char c : text)
-        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
-
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-
-    glEnable(GL_DEPTH_TEST);
-}*/
 
 // ---------------------------------------------------------------------------
 // Logica joc: verificare pozitie dupa fiecare miscare terminata
@@ -208,78 +180,6 @@ void resetGame() {
     printf("[Game] Reset. Bloc la pozitia initiala.\n");
 }
 
-//DOAR PENTRU SCOPURI DE TEST
-
-// ---------------------------------------------------------------------------
-// Construirea nivelului demo
-//
-//  Grila (X→, Z↓):
-//
-//    0   1   2   3   4   5
-//  0 [N] [N] [N] [N] [ ] [ ]
-//  1 [N] [ ] [ ] [B] [ ] [ ]    B = ButtonTile
-//  2 [N] [ ] [ ] [N] [P] [P]    P = BridgeTile (pod)
-//  3 [N] [N] [N] [N] [ ] [ ]
-//
-//  Blocul porneste la (0,0). Butonul de la (3,1) activeaza podul (4,2)+(5,2).
-// ---------------------------------------------------------------------------
-void buildLevel() {
-    // -- Rand 0 --
-    tiles.emplace_back(std::make_unique<NormalTile>(0, 0));
-    tiles.emplace_back(std::make_unique<NormalTile>(1, 0));
-    tiles.emplace_back(std::make_unique<NormalTile>(2, 0));
-    tiles.emplace_back(std::make_unique<NormalTile>(3, 0));
-
-    // -- Rand 1 --
-    tiles.emplace_back(std::make_unique<NormalTile>(0, 1));
-    // (1,1) si (2,1) - gol
-    {
-        // Buton la (3,1) - mod TOGGLE, activeaza bridge-urile
-        auto btn = std::make_unique<ButtonTile>(
-            3, 1,
-            ButtonTile::ButtonMode::TOGGLE,
-            [](bool pressed) {
-                if (pressed) {
-                    if (bridgeTile1) bridgeTile1->activate();
-                    if (bridgeTile2) bridgeTile2->activate();
-                    printf("[Game] Pod activat!\n");
-                } else {
-                    if (bridgeTile1) bridgeTile1->deactivate();
-                    if (bridgeTile2) bridgeTile2->deactivate();
-                    printf("[Game] Pod dezactivat!\n");
-                }
-            }
-        );
-        tiles.emplace_back(std::move(btn));
-    }
-
-    // -- Rand 2 --
-    tiles.emplace_back(std::make_unique<NormalTile>(0, 2));
-    // (1,2) si (2,2) - gol
-    tiles.emplace_back(std::make_unique<NormalTile>(3, 2));
-    {
-        auto b1 = std::make_unique<BridgeTile>(4, 2, false, 0.4f);
-        auto b2 = std::make_unique<BridgeTile>(5, 2, false, 0.4f);
-        bridgeTile1 = b1.get();
-        bridgeTile2 = b2.get();
-        tiles.emplace_back(std::move(b1));
-        tiles.emplace_back(std::move(b2));
-    }
-
-    // -- Rand 3 --
-    tiles.emplace_back(std::make_unique<NormalTile>(0, 3));
-    tiles.emplace_back(std::make_unique<NormalTile>(1, 3));
-    tiles.emplace_back(std::make_unique<NormalTile>(2, 3));
-    tiles.emplace_back(std::make_unique<NormalTile>(3, 3));
-
-    // Initializam toate tile-urile (shaders + GPU buffers)
-    for (auto& t : tiles) {
-        t->init();
-    }
-
-    printf("[Game] Nivel incarcat. Tile-uri: %zu\n", tiles.size());
-}
-
 // ---------------------------------------------------------------------------
 // Callbacks GLUT
 // ---------------------------------------------------------------------------
@@ -334,48 +234,6 @@ void display()
     cuboid->setViewPos(viewPos);
     cuboid->display();
 
-    // --- Overlay Game Over ---
-    /*if (gameState == GameState::GAME_OVER) {
-        // Fundal semi-transparent (quad rosu inchis peste tot ecranul)
-        glUseProgram(0);
-        glDisable(GL_DEPTH_TEST);
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        glMatrixMode(GL_PROJECTION);
-        glPushMatrix();
-        glLoadIdentity();
-        gluOrtho2D(0, windowW, 0, windowH);
-        glMatrixMode(GL_MODELVIEW);
-        glPushMatrix();
-        glLoadIdentity();
-
-        glColor4f(0.5f, 0.0f, 0.0f, 0.45f);
-        glBegin(GL_QUADS);
-        glVertex2i(0,       0);
-        glVertex2i(windowW, 0);
-        glVertex2i(windowW, windowH);
-        glVertex2i(0,       windowH);
-        glEnd();
-
-        glPopMatrix();
-        glMatrixMode(GL_PROJECTION);
-        glPopMatrix();
-        glMatrixMode(GL_MODELVIEW);
-
-        glDisable(GL_BLEND);
-        glEnable(GL_DEPTH_TEST);
-
-        // Text "GAME OVER"
-        int textX = windowW / 2 - 100;
-        int textY = windowH / 2 + 10;
-        renderText2D("GAME OVER", textX, textY, 1.0f, 1.0f, 1.0f);
-
-        // Sub-text cu countdown
-        int secondsLeft = (int)(GAME_OVER_DURATION - gameOverTimer) + 1;
-        std::string sub = "Reset in " + std::to_string(secondsLeft) + "s...";
-        renderText2D(sub, textX + 10, textY - 35, 0.9f, 0.9f, 0.9f);
-    }*/
 
     glutSwapBuffers();
     glFlush();
@@ -389,16 +247,32 @@ void init()
     printf("Renderer: %s\n", renderer);
     printf("OpenGL version supported %s\n", version);
 
-    glClearColor(0.12f, 0.12f, 0.18f, 1.0f);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glEnable(GL_DEPTH_TEST);
 
     glewInit();
 
     // Cuboid-ul porneste deasupra tile-ului (0,0)
-    cuboid = new Cuboid(START_POS, START_SCALE, glm::vec3(0.2f, 0.6f, 1.0f));
+    //cuboid = new Cuboid(START_POS, START_SCALE, glm::vec3(0.0f, 1.0f, 0.0f)); //R, G, B - nivel 1
+    //nivel2:
+    cuboid = new Cuboid(glm::vec3(0.0f, CUBOID_STAND_Y, 2.0f),START_SCALE,
+        glm::vec3(0.0f,1.0f,0.0f));
     cuboid->init();
 
-    buildLevel();
+    // Construim nivelul 1
+    //auto level1 = std::make_unique<Levels::Level1>();
+    //level1->buildLevel();
+
+    // Construim nivelul 2
+    auto level2 = std::make_unique<Levels::Level2>();
+    level2->buildLevel();
+
+    // Mutam tile-urile din Level1 in vectorul global din main
+    //auto& lvlTiles = level1->getTiles();
+    auto& lvlTiles = level2->getTiles();
+    for (auto& t : lvlTiles) {
+        tiles.push_back(std::move(t));
+    }
 
     // Verificam pozitia de start
     checkLanding();
@@ -491,3 +365,9 @@ int main(int argc, char** argv)
     delete cuboid;
     return 0;
 }
+/*
+ *TODO: Exista neconcordante intre mapa desenata si miscarea cuboidului
+    Aparent codarea e corecta, trebuie imbunatatiri
+    Trebuie gasita o alta modalitate de a afisa text in OpenGL
+ *
+ */

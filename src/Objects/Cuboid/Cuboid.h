@@ -13,7 +13,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/constants.hpp>
 
-#include "../../Interfaces/ObjectModelInterface.h"
+#include "../ObjectModelInterface.h"
 
 namespace ObjectModel {
     enum AnimationState {
