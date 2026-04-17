@@ -19,7 +19,7 @@ namespace Levels {
         //  0 [N] [ ] [N] [N] [ ] [ ]
         //  1 [N] [N] [N] [N] [ ] [ ]    B = ButtonTile
         //  2 [N] [N] [N] [N] [ ] [ ]    P = BridgeTile (pod)
-        //  3 [ ] [ ] [N] [N] [N] [N]
+        //  3 [ ] [ ] [N] [N] [N] [F]    F = finish
         //
         //  Blocul porneste la (0,0).
         // ---------------------------------------------------------------------------

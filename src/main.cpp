@@ -61,7 +61,7 @@ glm::vec3 lightPos(3.0f, 8.0f, 3.0f);
 glm::vec3 viewPos(4.0f, 8.0f, 10.0f);
 glm::vec3 viewTarget(2.5f, 0.0f, 1.5f); // centrul nivelului
 
-int windowW = 900, windowH = 700;
+int windowW = 1000, windowH = 900;
 
 // Pentru delta time
 high_resolution_clock::time_point lastTime;

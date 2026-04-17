@@ -42,7 +42,7 @@ namespace ObjectModel {
         /// @param animSec       - durata animatiei de fade (secunde), 0 = instant
         /// @param vertPath/fragPath
         BridgeTile(int gx, int gz, bool startActive = false, float animSec = 0.4f,
-                   const std::string& vertPath = "../src/Objects/Tiles/tile.frag",
+                   const std::string& vertPath = "../src/Objects/Tiles/tile.vert",
                    const std::string& fragPath = "../src/Objects/Tiles/tile.frag")
             : Tile(gx, gz,
                    1.0f, 0.2f, 1.0f,
