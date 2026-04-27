@@ -16,7 +16,10 @@ file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.h") # Comandă utilă să nu mai sc
 add_executable(${PROJECT_NAME} ${SOURCES}
         src/Levels/Level.h
         src/Levels/Level1.h
-        src/Levels/Level2.h)
+        src/Levels/Level2.h
+        src/Objects/Tiles/FinishTile.h
+        src/Game/Game.cpp
+        src/Game/Game.h)
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE FREEGLUT_STATIC)
 

@@ -18,7 +18,8 @@ namespace ObjectModel {
     enum class TileType {
         NORMAL,
         BUTTON,
-        BRIDGE
+        BRIDGE,
+        FINISH
     };
 
     /// Structura unui vertex trimis catre shader

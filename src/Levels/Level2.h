@@ -8,6 +8,7 @@
 #include "src/Objects/Tiles/NormalTile.h"
 #include "src/Objects/Tiles/BridgeTile.h"
 #include "src/Objects/Tiles/ButtonTile.h"
+#include "src/Objects/Tiles/FinishTile.h"
 
 namespace Levels {
     class Level2 : public Level {
@@ -20,8 +21,8 @@ namespace Levels {
         //  Grila (X→, Z↓):
         //
         //     0   1   2   3   4   5   6   7   8   9  10  11   12  13  14
-        //  0 [ ] [ ] [ ] [ ] [ ] [ ] [N] [N] [N] [N] [ ] [ ]  [N] [N] [N]
-        //  1 [ ] [ ] [ ] [ ] [ ] [ ] [N] [N] [B] [N] [ ] [ ]  [N] [F] [N]         B = ButtonTile
+        //  0 [ ] [ ] [ ] [ ] [ ] [ ] [N] [N] [N] [N] [ ] [ ]  [N] [F] [N]
+        //  1 [ ] [ ] [ ] [ ] [ ] [ ] [N] [N] [B] [N] [ ] [ ]  [N] [N] [N]         B = ButtonTile
         //  2 [N] [N] [B] [N] [ ] [ ] [N] [N] [N] [N] [ ] [ ]  [N] [N] [N]         P = BridgeTile (pod)
         //  3 [N] [N] [N] [N] [ ] [ ] [N] [N] [N] [N] [P] [P]  [N] [N] [N]          F = finish
         //  4 [N] [N] [N] [N] [P] [P] [N] [N] [N] [N] [ ] [ ]  [ ] [ ] [ ]          B→P(10,3)+P(11,3)
@@ -56,11 +57,12 @@ namespace Levels {
             // -----------------------------------------------------------------------
             // Rand Z=0: N la X = 6,7,8,9,12,13,14
             // -----------------------------------------------------------------------
-            for (int x : {6, 7, 8, 9, 12, 13, 14})
+            for (int x : {6, 7, 8, 9, 12, 14})
                 tiles.emplace_back(std::make_unique<ObjectModel::NormalTile>(x, 0));
+            tiles.emplace_back(std::make_unique<ObjectModel::FinishTile>(13,0));
 
             // -----------------------------------------------------------------------
-            // Rand Z=1: N la X = 6,7,9,12,13,14 | B la X=8 (X=10,11 sunt goale)
+            // Rand Z=1: N la X = 6,7,9,12,13, 14 | B la X=8 (X=10,11 sunt goale)
             // -----------------------------------------------------------------------
             for (int x : {6, 7, 9, 12, 13, 14})
                 tiles.emplace_back(std::make_unique<ObjectModel::NormalTile>(x, 1));
@@ -125,6 +127,13 @@ namespace Levels {
             for (auto& t : tiles)
                 t->init();
         }
+
+        glm::ivec2 getStartGridPos() const override { return {0, 2}; }
+
+        // Nivelul se intinde pe X=0..14, Z=0..5, centru ~ (7, 0, 2.5)
+        // Camera trasa inapoi ca nivelul sa incapa la aceeasi dimensiune de tile ca Level1
+        glm::vec3 getCameraPos()    const override { return {7.0f, 20.0f, 26.0f}; }
+        glm::vec3 getCameraTarget() const override { return {7.0f,  0.0f,  2.5f}; }
     };
 }
 
