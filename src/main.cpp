@@ -5,6 +5,9 @@
 #include "glew.h"
 #include "Game/Game.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 int main(int argc, char** argv)
 {
     glutInit(&argc, argv);

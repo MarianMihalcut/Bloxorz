@@ -92,7 +92,7 @@ void Game::init(int w, int h) {
     printf("Renderer: %s\n", renderer);
     printf("OpenGL version: %s\n", version);
 
-    glClearColor(0.12f, 0.12f, 0.18f, 1.0f);
+    glClearColor(0.53f, 0.73f, 0.87f, 1.0f);
     glEnable(GL_DEPTH_TEST);
     glewInit();
 
@@ -310,88 +310,64 @@ void Game::renderText2D(const std::string& text, int x, int y,
     glEnable(GL_DEPTH_TEST);
 }
 
+void Game::drawFullscreenOverlay(float r, float g, float b, float a) const {
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glUseProgram(0); // Folosește pipeline-ul fix
+
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    glOrtho(0, windowW, 0, windowH, -1, 1); // Setează sistemul de coordonate în pixeli
+
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    glColor4f(r, g, b, a);
+    glBegin(GL_QUADS);
+    glVertex2f(0, 0);
+    glVertex2f(windowW, 0);
+    glVertex2f(windowW, windowH);
+    glVertex2f(0, windowH);
+    glEnd();
+
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+}
+
 void Game::renderOverlay() const {
-    // Contor mutari (mereu vizibil in coltul stanga-sus)
-    renderText2D("Mutari: " + std::to_string(moveCount),
-                 10, windowH - 30, 1.0f, 1.0f, 1.0f);
+    // UI-ul persistent (Mereu vizibil)
+    renderText2D("Mutari: " + std::to_string(moveCount), 10, windowH - 30, 1.0f, 1.0f, 1.0f);
+    renderText2D("Nivel: " + std::to_string(currentLevelIdx + 1), 10, windowH - 60, 1.0f, 1.0f, 1.0f);
 
-    // Indicator nivel
-    renderText2D("Nivel: " + std::to_string(currentLevelIdx + 1),
-                 10, windowH - 60, 0.8f, 0.8f, 0.8f);
-
+    // Overlay-uri specifice stării
     if (gameState == State::GAME_OVER) {
-        // Fundal semi-transparent
-        glUseProgram(0);
-        glDisable(GL_DEPTH_TEST);
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        glMatrixMode(GL_PROJECTION); glPushMatrix(); glLoadIdentity();
-        //gluOrtho2D(0, windowW, 0, windowH);
-        glMatrixMode(GL_MODELVIEW); glPushMatrix(); glLoadIdentity();
-
-        glColor4f(0.5f, 0.0f, 0.0f, 0.45f);
-        glBegin(GL_QUADS);
-            glVertex2i(0, 0); glVertex2i(windowW, 0);
-            glVertex2i(windowW, windowH); glVertex2i(0, windowH);
-        glEnd();
-
-        glPopMatrix(); glMatrixMode(GL_PROJECTION); glPopMatrix();
-        glMatrixMode(GL_MODELVIEW);
-        glDisable(GL_BLEND); glEnable(GL_DEPTH_TEST);
+        drawFullscreenOverlay(0.5f, 0.0f, 0.0f, 0.45f); // Roșu transparent
 
         renderText2D("GAME OVER", windowW/2 - 80, windowH/2 + 10);
         int sec = (int)(GAME_OVER_DELAY - stateTimer) + 1;
-        renderText2D("Reset in " + std::to_string(sec) + "s...",
-                     windowW/2 - 70, windowH/2 - 25, 0.9f, 0.9f, 0.9f);
-
-    } else if (gameState == State::LEVEL_TRANSITION) {
-        glUseProgram(0); glDisable(GL_DEPTH_TEST);
-        glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        glMatrixMode(GL_PROJECTION); glPushMatrix(); glLoadIdentity();
-        //gluOrtho2D(0, windowW, 0, windowH);
-        glMatrixMode(GL_MODELVIEW); glPushMatrix(); glLoadIdentity();
-
-        glColor4f(0.0f, 0.3f, 0.0f, 0.50f);
-        glBegin(GL_QUADS);
-            glVertex2i(0,0); glVertex2i(windowW,0);
-            glVertex2i(windowW,windowH); glVertex2i(0,windowH);
-        glEnd();
-
-        glPopMatrix(); glMatrixMode(GL_PROJECTION); glPopMatrix();
-        glMatrixMode(GL_MODELVIEW);
-        glDisable(GL_BLEND); glEnable(GL_DEPTH_TEST);
+        renderText2D("Reset in " + std::to_string(sec) + "s...", windowW/2 - 70, windowH/2 - 25);
+    }
+    else if (gameState == State::LEVEL_TRANSITION) {
+        drawFullscreenOverlay(0.0f, 0.3f, 0.0f, 0.50f); // Verde transparent
 
         renderText2D("NIVEL COMPLET!", windowW/2 - 90, windowH/2 + 10, 0.2f, 1.0f, 0.4f);
-        renderText2D("Urmatorul nivel in " +
-                     std::to_string((int)(TRANSITION_DELAY - stateTimer) + 1) + "s...",
-                     windowW/2 - 100, windowH/2 - 25, 0.9f, 0.9f, 0.9f);
+        int sec = (int)(TRANSITION_DELAY - stateTimer) + 1;
+        renderText2D("Urmatorul nivel in " + std::to_string(sec) + "s...", windowW/2 - 100, windowH/2 - 25);
+    }
+    else if (gameState == State::GAME_COMPLETE) {
+        drawFullscreenOverlay(0.0f, 0.0f, 0.3f, 0.60f); // Albastru transparent
 
-    } else if (gameState == State::GAME_COMPLETE) {
-        glUseProgram(0); glDisable(GL_DEPTH_TEST);
-        glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        glMatrixMode(GL_PROJECTION); glPushMatrix(); glLoadIdentity();
-        //gluOrtho2D(0, windowW, 0, windowH);
-        glMatrixMode(GL_MODELVIEW); glPushMatrix(); glLoadIdentity();
-
-        glColor4f(0.0f, 0.0f, 0.3f, 0.60f);
-        glBegin(GL_QUADS);
-            glVertex2i(0,0); glVertex2i(windowW,0);
-            glVertex2i(windowW,windowH); glVertex2i(0,windowH);
-        glEnd();
-
-        glPopMatrix(); glMatrixMode(GL_PROJECTION); glPopMatrix();
-        glMatrixMode(GL_MODELVIEW);
-        glDisable(GL_BLEND); glEnable(GL_DEPTH_TEST);
-
-        renderText2D("JOC COMPLET!",
-                     windowW/2 - 80, windowH/2 + 30, 0.3f, 0.8f, 1.0f);
-        renderText2D("Total mutari: " + std::to_string(moveCount),
-                     windowW/2 - 90, windowH/2,      1.0f, 1.0f, 0.3f);
-        renderText2D("Apasa R pentru a relua",
-                     windowW/2 - 110, windowH/2 - 35, 0.8f, 0.8f, 0.8f);
+        renderText2D("JOC COMPLET!", windowW/2 - 80, windowH/2 + 30, 0.3f, 0.8f, 1.0f);
+        renderText2D("Total mutari: " + std::to_string(moveCount), windowW/2 - 90, windowH/2, 1.0f, 1.0f, 0.3f);
+        renderText2D("Apasa R pentru a relua", windowW/2 - 110, windowH/2 - 35, 0.8f, 0.8f, 0.8f);
     }
 }
 

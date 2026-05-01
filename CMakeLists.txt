@@ -19,7 +19,8 @@ add_executable(${PROJECT_NAME} ${SOURCES}
         src/Levels/Level2.h
         src/Objects/Tiles/FinishTile.h
         src/Game/Game.cpp
-        src/Game/Game.h)
+        src/Game/Game.h
+)
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE FREEGLUT_STATIC)
 

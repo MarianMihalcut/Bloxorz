@@ -112,6 +112,8 @@ private:
                       float r = 1.f, float g = 1.f, float b = 1.f) const;
     void renderOverlay() const;
 
+    void drawFullscreenOverlay(float r, float g, float b, float a) const;
+
     // Actualizeaza viewMatrix dupa schimbarea camerei
     void updateViewMatrix();
 

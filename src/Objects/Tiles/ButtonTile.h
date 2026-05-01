@@ -8,6 +8,8 @@
 #include "Tile.h"
 #include <functional>
 
+#include "src/stb_image.h"
+
 namespace ObjectModel {
     /// Un tile cu buton vizibil pe suprafata superioara.
     /// Cand blocul sta pe el, se apasa (coborat vizual) si cheama un callback.
@@ -31,65 +33,39 @@ namespace ObjectModel {
         // --- Callback apelat la schimbarea starii (pressed/unpressed) ---
         std::function<void(bool)> onStateChange;
 
-        // --- GPU objects pentru indicatorul de pe suprafata ---
-        GLuint indicatorVAO, indicatorVBO, indicatorEBO;
-        GLsizei indicatorIndexCount;
+        // Textura
+        GLuint textureId = 0;
+        std::string texturePath;
 
         // Culori
         static constexpr glm::vec3 COLOR_BODY     = glm::vec3(0.25f, 0.25f, 0.30f); // gri inchis
-        static constexpr glm::vec3 COLOR_UNPRESSED = glm::vec3(0.85f, 0.20f, 0.15f); // rosu
-        static constexpr glm::vec3 COLOR_PRESSED   = glm::vec3(0.15f, 0.75f, 0.25f); // verde
 
-        /// Construieste geometria indicatorului (o prisma mica deasupra tile-ului)
-        void buildIndicator() {
-            glm::vec3 color = pressed ? COLOR_PRESSED : COLOR_UNPRESSED;
+        // -----------------------------------------------------------------------
+        // Incarca textura PNG cu stb_image
+        // -----------------------------------------------------------------------
+        void loadTexture() {
+            glGenTextures(1, &textureId);
+            glBindTexture(GL_TEXTURE_2D, textureId);
 
-            // Indicator: un cub mic centrat pe fata superioara a tile-ului
-            float iw = tileWidth  * 0.3f;
-            float ih = tileHeight * 0.6f; // inainte de apasare
-            float id = tileDepth  * 0.3f;
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-            // Il ridicam cu jumatatea inaltimii tile-ului + jumatatea inaltimii proprii
-            float yOffset = tileHeight / 2.0f + ih / 2.0f;
-
-            std::vector<TileVertex> verts;
-            std::vector<GLuint>     idxs;
-            buildBox(iw, ih, id, color, verts, idxs);
-
-            // Translatem vertexii manual cu offset-ul Y
-            for (auto& v : verts) {
-                v.position.y += yOffset;
+            stbi_set_flip_vertically_on_load(true); // OpenGL are Y inversat fata de imagini
+            int w, h, channels;
+            unsigned char* data = stbi_load(texturePath.c_str(), &w, &h, &channels, 0);
+            if (data) {
+                GLenum fmt = (channels == 4) ? GL_RGBA : GL_RGB;
+                glTexImage2D(GL_TEXTURE_2D, 0, fmt, w, h, 0, fmt, GL_UNSIGNED_BYTE, data);
+                glGenerateMipmap(GL_TEXTURE_2D);
+                stbi_image_free(data);
+                printf("[ButtonTile] Textura incarcata: %s (%dx%d, %dch)\n",
+                       texturePath.c_str(), w, h, channels);
+            } else {
+                printf("[ButtonTile] EROARE textura: %s\n", texturePath.c_str());
             }
-
-            indicatorIndexCount = static_cast<GLsizei>(idxs.size());
-
-            if (indicatorVAO == 0) {
-                glGenVertexArrays(1, &indicatorVAO);
-                glGenBuffers(1, &indicatorVBO);
-                glGenBuffers(1, &indicatorEBO);
-            }
-
-            glBindVertexArray(indicatorVAO);
-
-            glBindBuffer(GL_ARRAY_BUFFER, indicatorVBO);
-            glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(TileVertex),
-                         verts.data(), GL_DYNAMIC_DRAW); // DYNAMIC - culoarea se schimba
-
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indicatorEBO);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, idxs.size() * sizeof(GLuint),
-                         idxs.data(), GL_DYNAMIC_DRAW);
-
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(TileVertex),
-                                  (void*)offsetof(TileVertex, position));
-            glEnableVertexAttribArray(0);
-            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(TileVertex),
-                                  (void*)offsetof(TileVertex, normal));
-            glEnableVertexAttribArray(1);
-            glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(TileVertex),
-                                  (void*)offsetof(TileVertex, color));
-            glEnableVertexAttribArray(2);
-
-            glBindVertexArray(0);
+            glBindTexture(GL_TEXTURE_2D, 0);
         }
 
     public:
@@ -99,22 +75,21 @@ namespace ObjectModel {
         /// @param vertPath/fragPath - cai shadere
         ButtonTile(int gx, int gz, ButtonMode bMode = ButtonMode::TOGGLE,
                    std::function<void(bool)> callback = nullptr,
+                   const std::string& texPath = "../src/Objects/Tiles/500px-Smiley.png",
                    const std::string& vertPath = "../src/Objects/Tiles/tile.vert",
-                   const std::string& fragPath = "../src/Objects/Tiles/tile.frag")
+                   const std::string& fragPath = "../src/Objects/Tiles/tile_button.frag")
             : Tile(gx, gz,
                    1.0f, 0.2f, 1.0f,
                    COLOR_BODY, vertPath, fragPath)
             , pressed(false)
             , mode(bMode)
             , onStateChange(std::move(callback))
-            , indicatorVAO(0), indicatorVBO(0), indicatorEBO(0)
-            , indicatorIndexCount(0)
+            , texturePath(texPath)
         {}
 
         ~ButtonTile() override {
-            glDeleteVertexArrays(1, &indicatorVAO);
-            glDeleteBuffers(1, &indicatorVBO);
-            glDeleteBuffers(1, &indicatorEBO);
+            if (textureId)
+                glDeleteTextures(1, &textureId);
         }
 
         TileType getType() const override { return TileType::BUTTON; }
@@ -130,27 +105,34 @@ namespace ObjectModel {
             buildBox(tileWidth, tileHeight, tileDepth, baseColor, verts, idxs);
             setupMesh(verts, idxs);
 
-            // Indicatorul de deasupra
-            buildIndicator();
+            loadTexture();
         }
 
         /// Apelata de logica jocului cand blocul intra pe tile
         void press() {
-            if (pressed) return;
+            if (mode == ButtonMode::TOGGLE && pressed) {
+                // A doua apasare pe TOGGLE: dezactiveaza
+                pressed = false;
+                if (onStateChange) onStateChange(false);
+                printf("[ButtonTile] TOGGLE off la (%d,%d)\n", gridX, gridZ);
+                return;
+            }
+            if (pressed) return; // HOLD deja apasat
             pressed = true;
-            buildIndicator(); // recoloreaza in verde
             if (onStateChange) onStateChange(true);
+            printf("[ButtonTile] Apasat la (%d,%d)\n", gridX, gridZ);
         }
 
         /// Apelata cand blocul paraseste tile-ul
         void release() {
             if (!pressed) return;
             pressed = false;
-            buildIndicator(); // recoloreaza in rosu
             if (onStateChange) onStateChange(false);
+            printf("[ButtonTile] Eliberat la (%d,%d)\n", gridX, gridZ);
         }
 
-        void render(const glm::mat4& vpMatrix, const glm::vec3& lightPos,
+        void render(const glm::mat4& vpMatrix,
+                const glm::vec3& lightPos,
                 const glm::vec3& viewPos) override
         {
             if (!active) return;
@@ -158,15 +140,22 @@ namespace ObjectModel {
             glm::mat4 mvp = vpMatrix * modelMatrix;
             applyUniforms(mvp, lightPos, viewPos);
 
-            // 1. Corpul tile-ului
+            // Trimitem pozitia in grila catre shader (pentru calculul UV)
+            GLint locX = glGetUniformLocation(shader_programme, "tileGridX");
+            GLint locZ = glGetUniformLocation(shader_programme, "tileGridZ");
+            glUniform1f(locX, (float)gridX);
+            glUniform1f(locZ, (float)gridZ);
+
+            // Legam textura la unit 0
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, textureId);
+            glUniform1i(glGetUniformLocation(shader_programme, "buttonTex"), 0);
+
             glBindVertexArray(vao);
             glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr);
             glBindVertexArray(0);
 
-            // 2. Indicatorul (acelasi shader, alta geometrie)
-            glBindVertexArray(indicatorVAO);
-            glDrawElements(GL_TRIANGLES, indicatorIndexCount, GL_UNSIGNED_INT, nullptr);
-            glBindVertexArray(0);
+            glBindTexture(GL_TEXTURE_2D, 0);
         }
 
         void display() override {}

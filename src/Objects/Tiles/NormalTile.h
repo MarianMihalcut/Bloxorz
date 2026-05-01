@@ -18,7 +18,7 @@ namespace ObjectModel {
                    const std::string& fragPath = "../src/Objects/Tiles/tile.frag")
             : Tile(gx, gz,
                    1.0f, 0.2f, 1.0f,          // dimensiuni standard tile
-                   glm::vec3(0.36f, 0.55f, 0.72f), // albastru-gri
+                   glm::vec3(0.0f, 0.46f, 0.61f), // albastru
                    vertPath, fragPath)
         {}
 
@@ -49,7 +49,7 @@ namespace ObjectModel {
         }
 
         void display() override {
-            // Necesita parametri de camera; folositi render() direct
+
         }
 
         void update(float deltaTime) override {
