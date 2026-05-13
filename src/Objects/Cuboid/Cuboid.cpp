@@ -11,6 +11,7 @@
 #include <cmath>
 #include <cstdio>
 #include "../ObjectModelInterface.h"
+#include "src/stb_image.h"
 
 namespace ObjectModel {
 
@@ -46,7 +47,7 @@ namespace ObjectModel {
         animProgress = 1.0f;
         animSpeed = 2.0f;  // 2 secunde pentru o animație completă
 
-        generateVertices();
+        //generateVertices();
     }
 
     Cuboid::Cuboid(glm::vec3 pos, glm::vec3 scl, glm::vec3 col) {
@@ -80,7 +81,7 @@ namespace ObjectModel {
         updateOrientation();
 
         //generam geometria initiala
-        generateVertices();
+        //generateVertices();
     }
 
     Cuboid::~Cuboid() {
@@ -105,77 +106,86 @@ namespace ObjectModel {
          * - 3 coordonate pentru pozitie: x,y,z
          * - 3 coordonate pentru normala la suprafata: nx,ny,nz
          * - 3 coordonate pentru culoare: r,g,b
+         * - 2 coordonate pentru textura: u,v (scaled by 2.0f for more detail)
          */
 
-        //Fata X pozitiv
-        std::vector<float> face1 = {
-            Lx, -Ly, -Lz,  1.0f, 0.0f, 0.0f,  color.r, color.g, color.b,
-            Lx, -Ly,  Lz,  1.0f, 0.0f, 0.0f,  color.r, color.g, color.b,
-            Lx,  Ly,  Lz,  1.0f, 0.0f, 0.0f,  color.r, color.g, color.b,
+        // Factor de scalare pentru textura(la 0.1 se vede in regula)
+        float texScale = 0.1f;
 
-            Lx, -Ly, -Lz,  1.0f, 0.0f, 0.0f,  color.r, color.g, color.b,
-            Lx,  Ly, -Lz,  1.0f, 0.0f, 0.0f,  color.r, color.g, color.b,
-            Lx,  Ly,  Lz,  1.0f, 0.0f, 0.0f,  color.r, color.g, color.b
+        // Dimensiuni pentru calculul UV-urilor în funcție de fețe
+        float tx = scale.x * texScale;
+        float ty = scale.y * texScale;
+        float tz = scale.z * texScale;
+
+        // Fata X pozitiv (Dimensiuni: Z x Y)
+        std::vector<float> face1 = {
+            Lx, -Ly, -Lz,  1.0f, 0.0f, 0.0f,  color.r, color.g, color.b, 0.0f, 0.0f,
+            Lx, -Ly,  Lz,  1.0f, 0.0f, 0.0f,  color.r, color.g, color.b, tz,   0.0f,
+            Lx,  Ly,  Lz,  1.0f, 0.0f, 0.0f,  color.r, color.g, color.b, tz,   ty,
+
+            Lx, -Ly, -Lz,  1.0f, 0.0f, 0.0f,  color.r, color.g, color.b, 0.0f, 0.0f,
+            Lx,  Ly, -Lz,  1.0f, 0.0f, 0.0f,  color.r, color.g, color.b, 0.0f, ty,
+            Lx,  Ly,  Lz,  1.0f, 0.0f, 0.0f,  color.r, color.g, color.b, tz,   ty
         };
         vertices.insert(vertices.end(), face1.begin(), face1.end());
 
-        //Fata X negativ
+        // Fata X negativ (Dimensiuni: Z x Y)
         std::vector<float> face2 = {
-            -Lx, -Ly, -Lz,  -1.0f, 0.0f, 0.0f,  color.r, color.g, color.b,
-            -Lx,  Ly, -Lz,  -1.0f, 0.0f, 0.0f,  color.r, color.g, color.b,
-            -Lx,  Ly,  Lz,  -1.0f, 0.0f, 0.0f,  color.r, color.g, color.b,
+            -Lx, -Ly, -Lz,  -1.0f, 0.0f, 0.0f,  color.r, color.g, color.b, 0.0f, 0.0f,
+            -Lx,  Ly, -Lz,  -1.0f, 0.0f, 0.0f,  color.r, color.g, color.b, 0.0f, ty,
+            -Lx,  Ly,  Lz,  -1.0f, 0.0f, 0.0f,  color.r, color.g, color.b, tz,   ty,
 
-            -Lx, -Ly, -Lz,  -1.0f, 0.0f, 0.0f,  color.r, color.g, color.b,
-            -Lx, -Ly,  Lz,  -1.0f, 0.0f, 0.0f,  color.r, color.g, color.b,
-            -Lx,  Ly,  Lz,  -1.0f, 0.0f, 0.0f,  color.r, color.g, color.b
+            -Lx, -Ly, -Lz,  -1.0f, 0.0f, 0.0f,  color.r, color.g, color.b, 0.0f, 0.0f,
+            -Lx, -Ly,  Lz,  -1.0f, 0.0f, 0.0f,  color.r, color.g, color.b, tz,   0.0f,
+            -Lx,  Ly,  Lz,  -1.0f, 0.0f, 0.0f,  color.r, color.g, color.b, tz,   ty
         };
         vertices.insert(vertices.end(), face2.begin(), face2.end());
 
-        //Fata Y pozitiv
+        // Fata Y pozitiv (Dimensiuni: X x Z)
         std::vector<float> face3 = {
-            Lx,  Ly, -Lz,  0.0f, 1.0f, 0.0f,  color.r, color.g, color.b,
-            Lx,  Ly,  Lz,  0.0f, 1.0f, 0.0f,  color.r, color.g, color.b,
-           -Lx,  Ly,  Lz,  0.0f, 1.0f, 0.0f,  color.r, color.g, color.b,
+            Lx,  Ly, -Lz,  0.0f, 1.0f, 0.0f,  color.r, color.g, color.b, tx,   0.0f,
+            Lx,  Ly,  Lz,  0.0f, 1.0f, 0.0f,  color.r, color.g, color.b, tx,   tz,
+           -Lx,  Ly,  Lz,  0.0f, 1.0f, 0.0f,  color.r, color.g, color.b, 0.0f, tz,
 
-            Lx,  Ly, -Lz,  0.0f, 1.0f, 0.0f,  color.r, color.g, color.b,
-           -Lx,  Ly, -Lz,  0.0f, 1.0f, 0.0f,  color.r, color.g, color.b,
-           -Lx,  Ly,  Lz,  0.0f, 1.0f, 0.0f,  color.r, color.g, color.b
+            Lx,  Ly, -Lz,  0.0f, 1.0f, 0.0f,  color.r, color.g, color.b, tx,   0.0f,
+           -Lx,  Ly, -Lz,  0.0f, 1.0f, 0.0f,  color.r, color.g, color.b, 0.0f, 0.0f,
+           -Lx,  Ly,  Lz,  0.0f, 1.0f, 0.0f,  color.r, color.g, color.b, 0.0f, tz
         };
-        vertices.insert(vertices.end(),face3.begin(),face3.end());
+        vertices.insert(vertices.end(), face3.begin(), face3.end());
 
-        //Fata Y negativ
+        // Fata Y negativ (Dimensiuni: X x Z)
         std::vector<float> face4 = {
-            Lx, -Ly, -Lz,  0.0f, -1.0f, 0.0f,  color.r, color.g, color.b,
-            Lx, -Ly,  Lz,  0.0f, -1.0f, 0.0f,  color.r, color.g, color.b,
-           -Lx, -Ly,  Lz,  0.0f, -1.0f, 0.0f,  color.r, color.g, color.b,
+            Lx, -Ly, -Lz,  0.0f, -1.0f, 0.0f,  color.r, color.g, color.b, tx,   0.0f,
+            Lx, -Ly,  Lz,  0.0f, -1.0f, 0.0f,  color.r, color.g, color.b, tx,   tz,
+           -Lx, -Ly,  Lz,  0.0f, -1.0f, 0.0f,  color.r, color.g, color.b, 0.0f, tz,
 
-            Lx, -Ly, -Lz,  0.0f, -1.0f, 0.0f,  color.r, color.g, color.b,
-           -Lx, -Ly, -Lz,  0.0f, -1.0f, 0.0f,  color.r, color.g, color.b,
-           -Lx, -Ly,  Lz,  0.0f, -1.0f, 0.0f,  color.r, color.g, color.b
+            Lx, -Ly, -Lz,  0.0f, -1.0f, 0.0f,  color.r, color.g, color.b, tx,   0.0f,
+           -Lx, -Ly, -Lz,  0.0f, -1.0f, 0.0f,  color.r, color.g, color.b, 0.0f, 0.0f,
+           -Lx, -Ly,  Lz,  0.0f, -1.0f, 0.0f,  color.r, color.g, color.b, 0.0f, tz
         };
         vertices.insert(vertices.end(), face4.begin(), face4.end());
 
-        //Fata Z pozitiv
+        // Fata Z pozitiv (Dimensiuni: X x Y)
         std::vector<float> face5 = {
-            Lx, -Ly,  Lz,  0.0f, 0.0f, 1.0f,  color.r, color.g, color.b,
-            Lx,  Ly,  Lz,  0.0f, 0.0f, 1.0f,  color.r, color.g, color.b,
-           -Lx,  Ly,  Lz,  0.0f, 0.0f, 1.0f,  color.r, color.g, color.b,
+            Lx, -Ly,  Lz,  0.0f, 0.0f, 1.0f,  color.r, color.g, color.b, tx,   0.0f,
+            Lx,  Ly,  Lz,  0.0f, 0.0f, 1.0f,  color.r, color.g, color.b, tx,   ty,
+           -Lx,  Ly,  Lz,  0.0f, 0.0f, 1.0f,  color.r, color.g, color.b, 0.0f, ty,
 
-            Lx, -Ly,  Lz,  0.0f, 0.0f, 1.0f,  color.r, color.g, color.b,
-           -Lx, -Ly,  Lz,  0.0f, 0.0f, 1.0f,  color.r, color.g, color.b,
-           -Lx,  Ly,  Lz,  0.0f, 0.0f, 1.0f,  color.r, color.g, color.b
+            Lx, -Ly,  Lz,  0.0f, 0.0f, 1.0f,  color.r, color.g, color.b, tx,   0.0f,
+           -Lx, -Ly,  Lz,  0.0f, 0.0f, 1.0f,  color.r, color.g, color.b, 0.0f, 0.0f,
+           -Lx,  Ly,  Lz,  0.0f, 0.0f, 1.0f,  color.r, color.g, color.b, 0.0f, ty
         };
         vertices.insert(vertices.end(), face5.begin(), face5.end());
 
-        //Fata Z negativ
+        // Fata Z negativ (Dimensiuni: X x Y)
         std::vector<float> face6 = {
-            Lx, -Ly, -Lz,  0.0f, 0.0f, -1.0f,  color.r, color.g, color.b,
-            Lx,  Ly, -Lz,  0.0f, 0.0f, -1.0f,  color.r, color.g, color.b,
-           -Lx,  Ly, -Lz,  0.0f, 0.0f, -1.0f,  color.r, color.g, color.b,
+            Lx, -Ly, -Lz,  0.0f, 0.0f, -1.0f,  color.r, color.g, color.b, tx,   0.0f,
+            Lx,  Ly, -Lz,  0.0f, 0.0f, -1.0f,  color.r, color.g, color.b, tx,   ty,
+           -Lx,  Ly, -Lz,  0.0f, 0.0f, -1.0f,  color.r, color.g, color.b, 0.0f, ty,
 
-            Lx, -Ly, -Lz,  0.0f, 0.0f, -1.0f,  color.r, color.g, color.b,
-           -Lx, -Ly, -Lz,  0.0f, 0.0f, -1.0f,  color.r, color.g, color.b,
-           -Lx,  Ly, -Lz,  0.0f, 0.0f, -1.0f,  color.r, color.g, color.b
+            Lx, -Ly, -Lz,  0.0f, 0.0f, -1.0f,  color.r, color.g, color.b, tx,   0.0f,
+           -Lx, -Ly, -Lz,  0.0f, 0.0f, -1.0f,  color.r, color.g, color.b, 0.0f, 0.0f,
+           -Lx,  Ly, -Lz,  0.0f, 0.0f, -1.0f,  color.r, color.g, color.b, 0.0f, ty
         };
         vertices.insert(vertices.end(), face6.begin(), face6.end());
     }
@@ -185,6 +195,7 @@ namespace ObjectModel {
     // -------------------------------------------------------------------------
 
     void Cuboid::init() {
+        generateVertices();
 
         //incarcare shadere
         std::string vstext = textFileRead("../src/Objects/Cuboid/vertex.vert");
@@ -219,19 +230,60 @@ namespace ObjectModel {
         glBindVertexArray(vao);
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
+        // Load texture using stb_image
+        glGenTextures(1, &textureID);
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        glGenerateMipmap(GL_TEXTURE_2D);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // Folosește mipmaps
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        float maxAnisotropy;
+        glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, maxAnisotropy);
+
+        int width, height, nrChannels;
+        unsigned char *data = stbi_load("../src/Objects/Cuboid/cuboid_wall.jpg", &width, &height, &nrChannels, 0);
+        if (data) {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+            glGenerateMipmap(GL_TEXTURE_2D);
+            stbi_image_free(data);
+        }
+
         //atribut pozitie (location = 0) - in vertex shader (9 puncte per fata), offset = 0
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)0);
 
         //atribut normala (location = 1) - in vertex shader (9 puncte per fata), offset = 3
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
-            9 * sizeof(float), (void*)(3 * sizeof(float)));
+            11 * sizeof(float), (void*)(3 * sizeof(float)));
 
         //atribut culoare (location = 2) - in vertex shader (9 puncte per fata), offset = 6
         glEnableVertexAttribArray(2);
         glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE,
-            9*sizeof(float), (void*)(6 * sizeof(float)));
+            11*sizeof(float), (void*)(6 * sizeof(float)));
+
+        // Setup texture coordinate attribute (location = 3)
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)(9 * sizeof(float)));
+
+        // Setup shadow map FBO
+        glGenFramebuffers(1, &shadowMapFBO);
+        glGenTextures(1, &shadowMapTexture);
+        glBindTexture(GL_TEXTURE_2D, shadowMapTexture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, shadowMapSize, shadowMapSize, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFBO);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadowMapTexture, 0);
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
     void Cuboid::display() {
@@ -267,7 +319,26 @@ namespace ObjectModel {
         GLuint viewPosLoc = glGetUniformLocation(shader_programme, "viewPos");
         glUniform3fv(viewPosLoc, 1, glm::value_ptr(viewPos));
 
-        //In final desenam corpul
+        // Bind main texture to unit 0
+        GLuint textureLoc = glGetUniformLocation(shader_programme, "textureSampler");
+        glUniform1i(textureLoc, 0);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, textureID);
+
+        // Bind shadow map to unit 1
+        GLuint shadowMapLoc = glGetUniformLocation(shader_programme, "shadowMap");
+        glUniform1i(shadowMapLoc, 1);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, shadowMapTexture);
+
+        // Calculate light space matrix and pass it
+        glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 100.0f);
+        glm::mat4 lightView = glm::lookAt(lightPos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 lightSpaceMatrix = lightProjection * lightView;
+        GLuint lightSpaceMatrixLoc = glGetUniformLocation(shader_programme, "lightSpaceMatrix");
+        glUniformMatrix4fv(lightSpaceMatrixLoc, 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
+
+        // Draw the cuboid
         glDrawArrays(GL_TRIANGLES, 0, nrVertices); //36 de vertex-uri
     }
 
@@ -334,15 +405,20 @@ namespace ObjectModel {
 
     void Cuboid::setPosition(glm::vec3 pos) {
         position = pos;
+        targetPosition = pos;
     }
 
     /// Este setata marimea obiectului.
     /// Pentru ca se modifica corpul, el trebuie redesenat
     void Cuboid::setScale(glm::vec3 scl) {
+        if (scale == scl) return;  // No change needed
+
         scale = scl;
+        targetScale = scl;
         generateVertices();
 
         if (vbo!=0) {
+            glBindVertexArray(vao);
             glBindBuffer(GL_ARRAY_BUFFER, vbo);
             glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float),
                 vertices.data(), GL_STATIC_DRAW);
@@ -352,9 +428,12 @@ namespace ObjectModel {
     /// Este setata culoarea obiectului(in sistem RGB)
     /// Schimbarea culorii obiectului duce la redesenarea lui
     void Cuboid::setColor(glm::vec3 col) {
+        if (color == col) return;  // No change needed
+
         color = col;
         generateVertices();
         if (vbo!=0) {
+            glBindVertexArray(vao);
             glBindBuffer(GL_ARRAY_BUFFER, vbo);
             glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float),
                 vertices.data(), GL_STATIC_DRAW);

@@ -92,6 +92,10 @@ private:
     high_resolution_clock::time_point lastTime;
     bool firstFrame = true;
 
+    // Global lighting parameters
+    static constexpr glm::vec3 GLOBAL_LIGHT_COLOR = glm::vec3(1.0f, 1.0f, 1.0f);
+    static constexpr float GLOBAL_LIGHT_INTENSITY = 1.0f;
+
     // -----------------------------------------------------------------------
     // Metode private
     // -----------------------------------------------------------------------
@@ -120,6 +124,13 @@ private:
 public:
     Game();
     ~Game();
+
+    void setGlobalLightPos(glm::vec3 pos) {
+        lightPos = pos;
+        cuboid->setLightPos(pos);
+        for (auto& tile : tiles)
+            tile->setLightPos(pos);
+    }
 
     static Game* getInstance(); //necesar pt a crea singleton-ul pe clasa Game
 

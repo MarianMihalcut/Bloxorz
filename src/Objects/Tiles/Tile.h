@@ -49,6 +49,9 @@ namespace ObjectModel {
         // --- Starea tile-ului (activ/inactiv - relevant pt BridgeTile) ---
         bool active;
 
+        // --- Pozitia luminii pentru rendering ---
+        glm::vec3 lightPos;
+
         // --- Cai catre fisierele shader ---
         std::string vertShaderPath;
         std::string fragShaderPath;
@@ -230,6 +233,11 @@ namespace ObjectModel {
         bool isActive()          const { return active; }
         glm::mat4 getModelMatrix() const { return modelMatrix; }
         virtual TileType getType() const = 0;
+
+        // ---------------------------------------------------------------
+        // Setteri
+        // ---------------------------------------------------------------
+        void setLightPos(glm::vec3 light) { lightPos = light; }
 
         // ---------------------------------------------------------------
         // Metode pur virtuale mostenite din ObjectModelInterface

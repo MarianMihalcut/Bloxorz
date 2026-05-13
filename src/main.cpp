@@ -29,8 +29,8 @@ int main(int argc, char** argv)
 }
 
 /*
- *  TODO: de lucru la partea grafica
-    La tile-uri se pot pune texturi(la tile-uri si cub)
-    De important un obiect obj de tip cub(vezi lab 9) la tile buton
-    Background mai luminos(sau o lumina)
+ *  TODO: adaugare textura pe cuboid
+ *  (o singura sursa de lumina peste tot) - lab12 sau Lighting din learn OpenGL
+ *  adaugare umbra la cuboid - sa fie vizibila
+ *  Procesare grafica: texturi, umbre, etc.
 */

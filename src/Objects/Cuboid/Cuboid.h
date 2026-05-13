@@ -51,6 +51,11 @@ namespace ObjectModel {
         float animProgress; //de la 0% la 100%
         float animSpeed; //viteza animatiei
 
+        GLuint textureID;           // Texture for cuboid_wall.jpg
+        GLuint shadowMapFBO;        // Framebuffer for shadow map
+        GLuint shadowMapTexture;    // Depth texture for shadows
+        GLint shadowMapSize = 2048; // Resolution of shadow map
+
         void generateVertices();
         void startAnimation(AnimationState state, glm::vec3 newPos, glm::vec3 newScale,
                            float newRot, glm::vec3 rotAxis);
