@@ -7,50 +7,48 @@
 
 #include "Tile.h"
 #include <functional>
-
 #include "src/stb_image.h"
 
 namespace ObjectModel {
-    /// Un tile cu buton vizibil pe suprafata superioara.
-    /// Cand blocul sta pe el, se apasa (coborat vizual) si cheama un callback.
-    /// Geometria: tile-ul de baza + un indicator (disc/prisma) pe fata superioara.
-    ///
-    /// Redare in doua draw call-uri:
-    ///   1. Corpul tile-ului  (culoare: gri inchis)
-    ///   2. Indicatorul       (culoare: rosu nepasit / verde pasat)
+
+    /**
+     * @brief Tile cu buton care poate activa poduri.
+     *
+     * Când cuboidul stă pe acest tile, se apelează un callback (de obicei pentru activarea podurilor).
+     * Are o textură pe fața superioară (smiley).
+     */
     class ButtonTile : public Tile {
     public:
-        /// Tipuri de buton (determina daca bridgeul se mentine sau nu)
+        /**
+         * @brief Modul de operare al butonului.
+         */
         enum class ButtonMode {
-            TOGGLE,  // fiecare apasare schimba starea bridge-ului
-            HOLD     // bridge-ul e activ DOAR cat blocul sta pe buton
-            /// Logica de HOLD nu e implementata in acest proiect
+            TOGGLE,  ///< Fiecare apăsare comută starea (pornit/oprit)
+            HOLD     ///< Activ doar cât timp blocul stă pe buton (neimplementat complet)
         };
+
     private:
-        // --- Starea butonului ---
-        bool pressed;
-        ButtonMode mode;
+        bool pressed;                       ///< Starea curentă (apăsat/eliberat)
+        ButtonMode mode;                    ///< Modul de operare
+        std::function<void(bool)> onStateChange; ///< Callback apelat la schimbarea stării
+        GLuint textureId;                   ///< ID-ul texturii (smiley)
+        std::string texturePath;            ///< Calea către fișierul texturii
+        static constexpr glm::vec3 COLOR_BODY = glm::vec3(0.25f, 0.25f, 0.30f); ///< Gri închis
 
-        // --- Callback apelat la schimbarea starii (pressed/unpressed) ---
-        std::function<void(bool)> onStateChange;
-
-        // Textura
-        GLuint textureId = 0;
-        std::string texturePath;
-
-        // Culori
-        static constexpr glm::vec3 COLOR_BODY     = glm::vec3(0.25f, 0.25f, 0.30f); // gri inchis
-
-        // -----------------------------------------------------------------------
-        // Incarca textura PNG cu stb_image
-        // -----------------------------------------------------------------------
+        /// Încarcă textura PNG cu stb_image
         void loadTexture();
 
     public:
-        /// @param gx, gz       - pozitie in grila
-        /// @param mode         - TOGGLE sau HOLD
-        /// @param callback     - functie apelata cu (true) la apasare, (false) la eliberare
-        /// @param vertPath/fragPath - cai shadere
+        /**
+         * @brief Constructor.
+         * @param gx       Coordonata X în grilă
+         * @param gz       Coordonata Z în grilă
+         * @param bMode    Modul butonului (TOGGLE / HOLD)
+         * @param callback Funcția apelată la schimbarea stării (true = apăsat, false = eliberat)
+         * @param texPath  Calea către textură
+         * @param vertPath Calea vertex shader
+         * @param fragPath Calea fragment shader
+         */
         ButtonTile(int gx, int gz, ButtonMode bMode = ButtonMode::TOGGLE,
                    std::function<void(bool)> callback = nullptr,
                    const std::string& texPath = "../src/Objects/Tiles/500px-Smiley.png",
@@ -60,19 +58,23 @@ namespace ObjectModel {
         ~ButtonTile() override;
 
         TileType getType() const override;
-        bool isPressed() const;
-        ButtonMode getMode() const;
+        bool isPressed() const;          ///< Returnează dacă butonul este apăsat
+        ButtonMode getMode() const;      ///< Returnează modul butonului
 
         void init() override;
 
-        /// Apelata de logica jocului cand blocul intra pe tile
+        /**
+         * @brief Apelată când cuboidul intră pe acest tile.
+         * @details Schimbă starea și apelează callback-ul.
+         */
         void press();
 
-        /// Apelata cand blocul paraseste tile-ul
+        /**
+         * @brief Apelată când cuboidul părăsește acest tile.
+         */
         void release();
 
-        void render(const glm::mat4& vpMatrix,
-                    const glm::vec3& lightPos,
+        void render(const glm::mat4& vpMatrix, const glm::vec3& lightPos,
                     const glm::vec3& viewPos) override;
 
         void display() override;

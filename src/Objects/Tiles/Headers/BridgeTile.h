@@ -8,52 +8,67 @@
 #include "Tile.h"
 
 namespace ObjectModel {
+
+    /**
+     * @brief Pod ce poate fi activat/dezactivat de un buton.
+     *
+     * Are animații de fading in/out și poate fi traversabil doar când este activ.
+     */
     class BridgeTile : public Tile {
     public:
+        /**
+         * @brief Stările posibile ale podului.
+         */
         enum class BridgeState {
-            INACTIVE,    // invizibil, nu se randeaza
-            FADING_IN,   // animatie de aparitie
-            ACTIVE,      // vizibil si traversabil
-            FADING_OUT   // animatie de disparitie
+            INACTIVE,    ///< Invizibil, nu se randează
+            FADING_IN,   ///< Animație de apariție
+            ACTIVE,      ///< Vizibil și traversabil
+            FADING_OUT   ///< Animație de dispariție
         };
+
     private:
-        BridgeState state;
+        BridgeState state;      ///< Starea curentă
+        float animDuration;     ///< Durata animației (secunde)
+        float animTimer;        ///< Timer pentru animație
 
-        // --- Parametri animatie ---
-        float animDuration;  // durata tranzitiei in secunde
-        float animTimer;     // timp scurs din animatie
+        static constexpr float ANIM_Y_OFFSET = 2.0f; ///< Deplasarea verticală în animație
+        static constexpr glm::vec3 COLOR_BRIDGE = glm::vec3(0.90f, 0.55f, 0.10f); ///< Culoare portocalie
 
-        // Offset Y: in FADING_IN incepe de sus si coboara la 0
-        // in FADING_OUT porneste de la 0 si se duce in jos
-        static constexpr float ANIM_Y_OFFSET = 2.0f;
-
-        // Culoarea podului (portocaliu aprins - distinctiv fata de tile-urile normale)
-        static constexpr glm::vec3 COLOR_BRIDGE = glm::vec3(0.90f, 0.55f, 0.10f);
-
-        /// Recalculeaza modelMatrix cu un offset Y curent bazat pe starea animatiei
+        /**
+         * @brief Actualizează matricea de model cu un offset vertical.
+         * @param yOffset Deplasarea pe axa Y
+         */
         void updateModelMatrix(float yOffset = 0.0f);
 
     public:
-        /// @param gx, gz        - pozitie in grila
-        /// @param startActive   - daca true, tile-ul incepe vizibil (unele puzzle-uri au bridge-uri active initial)
-        /// @param animSec       - durata animatiei de fade (secunde), 0 = instant
-        /// @param vertPath/fragPath
+        /**
+         * @brief Constructor.
+         * @param gx          Coordonata X în grilă
+         * @param gz          Coordonata Z în grilă
+         * @param startActive Dacă podul începe activ (vizibil)
+         * @param animSec     Durata animației de fade (0 = instant)
+         * @param vertPath    Calea vertex shader
+         * @param fragPath    Calea fragment shader
+         */
         BridgeTile(int gx, int gz, bool startActive = false, float animSec = 0.4f,
                    const std::string& vertPath = "../src/Objects/Tiles/tile.vert",
                    const std::string& fragPath = "../src/Objects/Tiles/tile.frag");
 
         TileType getType() const override;
-        BridgeState getState() const;
+        BridgeState getState() const; ///< Returnează starea curentă
 
-        /// Returneaza true daca blocul poate calca pe acest tile
+        /**
+         * @brief Verifică dacă blocul poate traversa acest tile.
+         * @return true dacă este activ sau în animație de apariție
+         */
         bool isTraversable() const;
 
         void init() override;
 
-        /// Activeaza podul (apelat de ButtonTile prin callback)
+        /// Activează podul (pornind animația FADING_IN)
         void activate();
 
-        /// Dezactiveaza podul
+        /// Dezactivează podul (pornind animația FADING_OUT)
         void deactivate();
 
         void update(float deltaTime) override;

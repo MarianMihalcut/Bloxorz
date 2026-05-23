@@ -17,10 +17,11 @@ namespace ObjectModel {
 
     protected:
         /// shadder_programme - incarca shaderele obiectelor
-        /// vao - Vertex Array Object
-        /// vbo - Vertex Buffer Object
         /// ebo - Element Buffer Object(nu intotdeauna utilizat)
-        GLuint shader_programme, vao, vbo, ebo;
+        GLuint shader_programme;
+        GLuint vao; ///<vao - Vertex Array Object
+        GLuint vbo; ///<vbo - Vertex Buffer Object
+        GLuint ebo; ///<ebo - Element Buffer Object(nu intotdeauna utilizat)
 
         const GLuint PI = glm::pi<float>();
 

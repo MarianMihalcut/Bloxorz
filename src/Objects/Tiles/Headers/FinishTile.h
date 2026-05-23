@@ -9,17 +9,29 @@
 #include <functional>
 
 namespace ObjectModel {
+
+    /**
+     * @brief Tile de finalizare a nivelului.
+     *
+     * Când cuboidul ajunge în picioare pe acest tile, se apelează un callback
+     * care notifică trecerea la nivelul următor.
+     */
     class FinishTile : public Tile {
     private:
-        // Callback apelat de Game cand conditia de finish e indeplinita
-        std::function<void()> onFinish;
-        bool triggered; // evitam apeluri multiple
+        std::function<void()> onFinish; ///< Callback apelat la finish
+        bool triggered;                 ///< Evită apelări multiple
 
-        static constexpr glm::vec3 COLOR_FINISH = glm::vec3(0.10f, 0.85f, 0.30f); // verde aprins
+        static constexpr glm::vec3 COLOR_FINISH = glm::vec3(0.10f, 0.85f, 0.30f); ///< Verde aprins
 
     public:
-        /// @param gx, gz      - pozitie in grila
-        /// @param finishCb    - callback apelat la finish (setat de Game)
+        /**
+         * @brief Constructor.
+         * @param gx       Coordonata X în grilă
+         * @param gz       Coordonata Z în grilă
+         * @param finishCb Callback apelat la finish
+         * @param vertPath Calea vertex shader
+         * @param fragPath Calea fragment shader
+         */
         FinishTile(int gx, int gz,
                    std::function<void()> finishCb = nullptr,
                    const std::string& vertPath = "../src/Objects/Tiles/tile.vert",
@@ -27,13 +39,21 @@ namespace ObjectModel {
 
         TileType getType() const override;
 
-        /// @param cb - functia de callback
+        /**
+         * @brief Setează callback-ul de finish.
+         * @param cb Funcția de callback
+         */
         void setOnFinish(std::function<void()> cb);
 
-        /// Apelata din Game::checkLanding() — cuboidul e in picioare pe acest tile
+        /**
+         * @brief Declanșează finalizarea nivelului.
+         * @details Apelată de Game când cuboidul aterizează pe acest tile în poziție verticală.
+         */
         void triggerFinish();
 
-        /// Reseteaza starea (util la restart)
+        /**
+         * @brief Resetează starea (util la restart).
+         */
         void reset();
 
         void init() override;
