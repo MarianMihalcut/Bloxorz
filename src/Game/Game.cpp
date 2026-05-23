@@ -3,8 +3,8 @@
 //
 
 #include "Game.h"
-#include "../Levels/Level1.h"
-#include "../Levels/Level2.h"
+#include "../Levels/Headers/Level1.h"
+#include "../Levels/Headers/Level2.h"
 
 #include <GL/glu.h>
 #include <glm/gtx/transform.hpp>

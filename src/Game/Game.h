@@ -17,12 +17,12 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 
-#include "src/Levels/Level.h"
+#include "../Levels/Headers/Level.h"
 #include "src/Objects/Cuboid/Cuboid.h"
-#include "src/Objects/Tiles/Tile.h"
+#include "../Objects/Tiles/Headers/Tile.h"
 #include "src/Objects/Tiles/ButtonTile.h"
-#include "src/Objects/Tiles/BridgeTile.h"
-#include "src/Objects/Tiles/FinishTile.h"
+#include "../Objects/Tiles/Headers/BridgeTile.h"
+#include "../Objects/Tiles/Headers/FinishTile.h"
 
 using namespace ObjectModel;
 using namespace std::chrono;

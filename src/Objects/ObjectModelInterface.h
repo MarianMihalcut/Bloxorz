@@ -11,94 +11,45 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glew.h>
 
-
 namespace ObjectModel {
 
-class ObjectModelInterface {
+    class ObjectModelInterface {
 
-protected:
-    /// shadder_programme - incarca shaderele obiectelor
-    /// vao - Vertex Array Object
-    /// vbo - Vertex Buffer Object
-    /// ebo - Element Buffer Object(nu intotdeauna utilizat)
-    GLuint shader_programme, vao, vbo, ebo;
+    protected:
+        /// shadder_programme - incarca shaderele obiectelor
+        /// vao - Vertex Array Object
+        /// vbo - Vertex Buffer Object
+        /// ebo - Element Buffer Object(nu intotdeauna utilizat)
+        GLuint shader_programme, vao, vbo, ebo;
 
-    const GLuint PI = glm::pi<float>();
+        const GLuint PI = glm::pi<float>();
 
-    /// Citeste continutul fragment si vertex shaders.
-    /// Apelat in clasele copil.
-    std::string textFileRead(std::string fn) {
-        std::ifstream ifile(fn);
-        std::string filetext;
-        while (ifile.good()) {
-            std::string line;
-            std::getline(ifile, line);
-            filetext.append(line + "\n");
-        }
-        return filetext;
-    }
+        /// Citeste continutul fragment si vertex shaders.
+        /// Apelat in clasele copil.
+        std::string textFileRead(std::string fn);
 
-    void printShaderInfoLog(GLuint obj)
-    {
-        int infologLength = 0;
-        int charsWritten = 0;
-        char *infoLog;
+        void printShaderInfoLog(GLuint obj);
 
-        glGetShaderiv(obj, GL_INFO_LOG_LENGTH, &infologLength);
+        void printProgramInfoLog(GLuint obj);
 
-        if (infologLength > 0)
-        {
-            infoLog = (char *)malloc(infologLength);
-            glGetShaderInfoLog(obj, infologLength, &charsWritten, infoLog);
-            printf("%s\n", infoLog);
-            free(infoLog);
-        }
-    }
+    public:
+        ///<summary>
+        /// Constructorul clasei, creat pentru a initializa implicit elementele la instantierea clasei
+        ///</summary>
+        ObjectModelInterface();
 
-    void printProgramInfoLog(GLuint obj)
-    {
-        int infologLength = 0;
-        int charsWritten = 0;
-        char *infoLog;
+        ~ObjectModelInterface();
 
-        glGetProgramiv(obj, GL_INFO_LOG_LENGTH, &infologLength);
+        /// Declaram clasele abstracte, care trebuie implementate diferit in clasele copil
 
-        if (infologLength > 0)
-        {
-            infoLog = (char *) malloc(infologLength);
-            glGetProgramInfoLog(obj, infologLength, &charsWritten, infoLog);
-            printf("%s\n", infoLog);
-            free(infoLog);
-        }
-    }
-public:
-    ///<summary>
-    /// Constructorul clasei, creat pentru a initializa implicit elementele la instantierea clasei
-    ///</summary>
-    ObjectModelInterface() {
-        shader_programme = 0;
-        vao = 0;
-        ebo = 0;
-        vbo = 0;
-    }
+        /// Afiseaza obiectul creat
+        virtual void display() = 0; //display la obiectul creat
 
-    ~ObjectModelInterface() {
-        shader_programme = 0;
-        vao = 0;
-        ebo = 0;
-        vbo = 0;
-    }
+        /// Initializeaza shaderele
+        virtual void init() = 0; //initializari shadere
 
-    /// Declaram clasele abstracte, care trebuie implementate diferit in clasele copil
-
-    /// Afiseaza obiectul creat
-    virtual void display() = 0; //display la obiectul creat
-
-    /// Initializeaza shaderele
-    virtual void init() = 0; //initializari shadere
-
-    virtual void update(float deltaTime) = 0;
-};
+        virtual void update(float deltaTime) = 0;
+    };
 
 } // ObjectModel
 
