@@ -4,12 +4,12 @@
 
 #ifndef BLOXORZ_SPG_OBJECTMODELINTERFACE_H
 #define BLOXORZ_SPG_OBJECTMODELINTERFACE_H
-
+#include <glew.h>
 #include <fstream>
 #include <string>
 #include <GL/gl.h>
 #include <glm/gtc/type_ptr.hpp>
-#include <glew.h>
+
 
 namespace ObjectModel {
 

@@ -2,7 +2,7 @@
 #include "../../Objects/Tiles/Headers/NormalTile.h"
 #include "../../Objects/Tiles/Headers/BridgeTile.h"
 #include "../../Objects/Tiles/Headers/ButtonTile.h"
-#include "src/Objects/Tiles/FinishTile.h"
+#include "src/Objects/Tiles/Headers/FinishTile.h"
 
 namespace Levels {
     Level2::Level2() {}
