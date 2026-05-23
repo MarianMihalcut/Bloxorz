@@ -24,6 +24,7 @@ namespace ObjectModel {
         enum class ButtonMode {
             TOGGLE,  // fiecare apasare schimba starea bridge-ului
             HOLD     // bridge-ul e activ DOAR cat blocul sta pe buton
+            /// Logica de HOLD nu e implementata in acest proiect
         };
     private:
         // --- Starea butonului ---

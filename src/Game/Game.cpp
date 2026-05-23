@@ -68,6 +68,7 @@ void Game::loadLevel(int idx) {
     // Actualizam camera pentru noul nivel
     viewPos    = level->getCameraPos();
     viewTarget = level->getCameraTarget();
+
     updateViewMatrix();
 
     gameState  = State::PLAYING;
@@ -104,8 +105,6 @@ void Game::init(int w, int h) {
     currentLevelIdx = 0;
     moveCount       = 0;
     loadLevel(0);
-
-    printf("[Game] Sagetile = miscare | R = reset | ESC = iesire\n");
 }
 
 // ---------------------------------------------------------------------------
@@ -180,7 +179,6 @@ void Game::checkLanding() {
 
         // FinishTile se activeaza DOAR cand blocul e in picioare (ocupa 1 tile)
         if (t->getType() == TileType::FINISH && isStanding && occupied.size() == 1) {
-            printf("[Game] FINISH! Mutari: %d\n", moveCount);
             static_cast<FinishTile*>(t)->triggerFinish();
             return;
         }
@@ -188,7 +186,6 @@ void Game::checkLanding() {
 
     printf("[Game] Bloc la: ");
     for (auto [tx, tz] : occupied) printf("(%d,%d) ", tx, tz);
-    printf("| Mutari: %d\n", moveCount);
 }
 
 void Game::releaseButtons(const std::vector<std::pair<int,int>>& prev) {
@@ -215,7 +212,6 @@ void Game::advanceLevel() {
         // Ultimul nivel terminat
         gameState  = State::GAME_COMPLETE;
         stateTimer = 0.0f;
-        printf("[Game] JOC COMPLET! Total mutari: %d\n", moveCount);
     }
 }
 
