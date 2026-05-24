@@ -23,6 +23,7 @@
 #include "src/Objects/Tiles/Headers//ButtonTile.h"
 #include "../Objects/Tiles/Headers/BridgeTile.h"
 #include "../Objects/Tiles/Headers/FinishTile.h"
+#include "src/Objects/Cuboid/Shadows/ShadowQuad.h"
 
 using namespace ObjectModel;
 using namespace std::chrono;
@@ -72,17 +73,23 @@ private:
     // -----------------------------------------------------------------------
     // Niveluri
     // -----------------------------------------------------------------------
-    int currentLevelIdx = 0;  ///< Indexul nivelului curent (0 = Level1, 1 = Level2)
+    int currentLevelIdx = 0;  ///< Indexul nivelului curent (0 = Level 1, 1 = Level 2)
 
     // -----------------------------------------------------------------------
     // Camera
     // -----------------------------------------------------------------------
     glm::mat4 projectionMatrix;   ///< Matricea de proiecție (perspectivă)
     glm::mat4 viewMatrix;         ///< Matricea de vizualizare (camera)
-    glm::vec3 lightPos  = glm::vec3(3.0f, 8.0f,  3.0f); ///< Poziția sursei de lumină
+    glm::vec3 lightPos  = glm::vec3(5.0f, 12.0f,  5.0f); ///< Poziția sursei de lumină
     glm::vec3 viewPos   = glm::vec3(2.5f, 10.0f, 12.0f); ///< Poziția camerei
     glm::vec3 viewTarget= glm::vec3(2.5f,  0.0f,  1.5f); ///< Punctul urmărit de cameră
     int windowW = 1000, windowH = 900;           ///< Dimensiunile ferestrei
+
+    // -----------------------------------------------------------------------
+    // Shadow Quad(cuadratura umbrei)
+    // -----------------------------------------------------------------------
+    ShadowQuad shadowQuad; ///< Obiectul pentru desenarea umbrei cuboidului pe tile-uri
+    bool shadowQuadInitialized = false; ///< Flag pentru inițializarea shadow quad-ului
 
     // -----------------------------------------------------------------------
     // Stare joc
@@ -190,12 +197,7 @@ public:
      * @brief Setează poziția luminii globale și o propagă către cuboid și tile-uri.
      * @param pos Noua poziție a luminii.
      */
-    void setGlobalLightPos(glm::vec3 pos) {
-        lightPos = pos;
-        cuboid->setLightPos(pos);
-        for (auto& tile : tiles)
-            tile->setLightPos(pos);
-    }
+    void setGlobalLightPos(glm::vec3 pos);
 
     /**
      * @brief Returnează instanța unică a jocului (singleton).
@@ -204,7 +206,7 @@ public:
     static Game* getInstance();
 
     /**
-     * @brief Inițializează jocul (OpenGL, cuboid, nivelul 0).
+     * @brief Inițializează jocul (OpenGL, cuboid, nivelul).
      * @param windowW Lățimea ferestrei
      * @param windowH Înălțimea ferestrei
      */

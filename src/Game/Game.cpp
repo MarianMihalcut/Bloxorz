@@ -82,6 +82,13 @@ void Game::resetCurrentLevel() {
     loadLevel(currentLevelIdx);
 }
 
+void Game::setGlobalLightPos(glm::vec3 pos) {
+    lightPos = pos;
+    cuboid->setLightPos(pos);
+    for (auto& tile : tiles)
+        tile->setLightPos(pos);
+}
+
 // ---------------------------------------------------------------------------
 // Init
 // ---------------------------------------------------------------------------
@@ -101,6 +108,10 @@ void Game::init(int w, int h) {
                         STAND_SCALE,
                         glm::vec3(1.0f, 0.0f, 0.0f));
     cuboid->init();
+
+    //initializare umbra quad
+    shadowQuad.init();
+    shadowQuadInitialized = true;
 
     currentLevelIdx = 0;
     moveCount       = 0;
@@ -267,6 +278,28 @@ void Game::onDisplay() {
     glm::mat4 vp = projectionMatrix * viewMatrix;
     for (auto& t : tiles)
         t->render(vp, lightPos, viewPos);
+
+    if (shadowQuadInitialized && gameState == State::PLAYING && !cuboid->isAnimating()) {
+        glm::vec3 cuboidPos = cuboid->getPosition();
+        glm::vec3 cuboidScale = cuboid->getScale();
+        float baseY = cuboidPos.y - cuboidScale.y / 2.0f;
+        glm::vec3 baseCenter(cuboidPos.x, baseY, cuboidPos.z);
+
+        glm::vec3 lightDir = glm::normalize(lightPos - cuboidPos);
+        if (lightDir.y > 0.01f) {  // lumină de sus
+            glm::vec3 rayDir = -lightDir;
+            float t = (baseY - 0.05f) / (rayDir.y);
+            glm::vec3 offset = rayDir * t;
+            glm::vec3 shadowPos(baseCenter.x + offset.x, 0.05f, baseCenter.z + offset.z);
+
+            // Test: desenează mai întâi umbra direct sub cuboid pentru verificare
+            // shadowPos = glm::vec3(cuboidPos.x, 0.05f, cuboidPos.z);
+
+            float widthFactor = 1.3f;   // mărește lățimea și adâncimea cu 30%
+            glm::vec3 shadowScale(cuboidScale.x * widthFactor, 1.0f, cuboidScale.z * widthFactor);
+            shadowQuad.render(shadowPos, shadowScale, projectionMatrix * viewMatrix);
+        }
+    }
 
     // Randare cuboid
     cuboid->setProjectionMatrix(projectionMatrix);
