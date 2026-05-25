@@ -12,3 +12,5 @@ Va trebui sa cautati si sa descarcati glew, freeglut si glm de pe internet inain
 **Ele sunt excluse de la versionare!**
 
 **Glew,FreeGlut si GLM se adauga relativ la root(adica pe acelasi nivel cu src sau cu CMake-ul)**
+
+**Joc dezvoltat in CLion**
