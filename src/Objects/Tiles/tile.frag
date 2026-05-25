@@ -22,7 +22,7 @@ void main() {
     float diff = max(dot(norm, lightDir), 0.0);
     vec3 diffuse = diff * color;
 
-    // Rezultatul final combină lumina ambientală cu cea difuză
+    // Rezultatul final combină lumina ambientală cu cea difuză - asemanator cu un model Lambertian simplu
     vec3 result = ambient + diffuse;
 
     //Implementam logica pentru muchii

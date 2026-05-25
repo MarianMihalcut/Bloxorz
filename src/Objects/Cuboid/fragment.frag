@@ -5,17 +5,17 @@ in vec3 fragColor;
 in vec3 fragPos;
 in vec3 lightDir;
 in vec3 viewDir;
-in vec2 texCoord_out;                     // NEW
-in vec4 fragPosLightSpace;                // NEW
+in vec2 texCoord_out;                     // Coordonatele UV pentru textură
+in vec4 fragPosLightSpace;                // Poziția fragmentului în spațiul luminii pentru calculul umbrei
 
 out vec4 outColor;
 
 uniform vec3 lightPos;
 uniform vec3 viewPos;
-uniform sampler2D textureSampler;         // NEW: cuboid texture
-uniform sampler2D shadowMap;              // NEW: shadow depth map
+uniform sampler2D textureSampler;         // textura aplicată pe cuboid
+uniform sampler2D shadowMap;              // textura de adâncime generată de camera luminii pentru calculul umbrei
 
-// NEW: Calculate shadow using Percentage Closer Filtering (PCF)
+// Funcție pentru calculul umbrei folosind shadow mapping (PCF - Percentage Closer Filtering)
 float calculateShadow(vec4 fragPosLight) {
     vec3 projCoords = fragPosLight.xyz / fragPosLight.w;
     projCoords = projCoords * 0.5 + 0.5;  // Transform to [0,1] range
@@ -43,25 +43,25 @@ void main(){
     // Sample texture
     vec3 texColor = texture(textureSampler, texCoord_out).rgb;
 
-    // Ambient lighting - increased for more visibility
+    // Ambient lighting - o lumină de bază pentru a vedea fețele umbrite
     vec3 ambient = 0.6 * texColor;
 
-    // Diffuse lighting
+    // Diffuse lighting - bazată pe produsul scalar (dot product) între normală și direcția luminii
     vec3 normal = normalize(fragNormal);
     vec3 lightDirection = normalize(lightDir);
     float diff = max(dot(normal, lightDirection), 0.0);
     vec3 diffuse = 1.2 * diff * texColor;
 
-    // Specular lighting
+    // Specular lighting - bazată pe modelul Phong pentru reflexii
     vec3 viewDirection = normalize(viewDir);
     vec3 reflectDir = reflect(-lightDirection, normal);
     float spec = pow(max(dot(viewDirection, reflectDir), 0.0), 50.0);
     vec3 specular = 0.8 * spec * vec3(1.0, 1.0, 1.0);
 
-    // Calculate shadow
+    // Calculare shadow
     float shadow = calculateShadow(fragPosLightSpace);
 
-    // Combine with shadow (reduce diffuse and specular in shadow)
+    // Combinație finală: lumina ambientală + (1 - shadow) * (lumina difuză + lumina speculară)
     vec3 result = ambient + (1.0 - shadow) * (diffuse + specular);
 
     outColor = vec4(result, 1.0);

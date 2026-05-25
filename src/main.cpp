@@ -27,10 +27,3 @@ int main(int argc, char** argv)
     glutMainLoop();
     return 0;
 }
-
-/*
- *  TODO: adaugare textura pe cuboid
- *  (o singura sursa de lumina peste tot) - lab12 sau Lighting din learn OpenGL
- *  adaugare umbra la cuboid - sa fie vizibila
- *  Procesare grafica: texturi, umbre, etc.
-*/

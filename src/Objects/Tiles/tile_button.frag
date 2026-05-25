@@ -14,7 +14,9 @@ uniform sampler2D buttonTex;
 out vec4 frag_colour;
 
 void main() {
-    float ambientStrength = 0.3;
+    //UV reprezinta coordonatele de pe textura (x, y), care sunt derivate din pozitia world a fragmentului
+
+    float ambientStrength = 0.4;
 
     vec3 norm     = normalize(normal);
     vec3 baseColor;
@@ -36,6 +38,7 @@ void main() {
         baseColor = color;
     }
 
+    //In cazul tile-ului buton, avem doar componenta ambientala, cu textura pe fata de sus
     vec3 ambient = ambientStrength * baseColor;
     vec3 diffuse = vec3(0.0); // fara lumina directionala pe lateral - simplu
 

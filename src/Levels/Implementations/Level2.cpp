@@ -109,7 +109,7 @@ namespace Levels {
     }
 
     glm::vec3 Level2::getCameraPos() const {
-        return {7.0f, 20.0f, 26.0f};
+        return {7.0f, 14.0f, 18.0f};
     }
 
     glm::vec3 Level2::getCameraTarget() const {
